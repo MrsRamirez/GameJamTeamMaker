@@ -307,21 +307,35 @@ Bob,11,234567891,11"></textarea>
   });
 
   document.getElementById('makeTeamsBtn').addEventListener('click', () => {
-    if (ranked.length === 0) { setStatus('Rank students first.', 'warn'); return; }
-    // If user didn't click shuffle, we still build teams on current tiers.
-    assignTiers();
+  if (ranked.length === 0) { setStatus('Rank students first.', 'warn'); return; }
 
-    const teamCount = Math.min(tiers.top.length, tiers.mid.length, tiers.bot.length);
-    if (teamCount === 0) { setStatus('Not enough students in tiers to form teams.', 'err'); return; }
+  // IMPORTANT: do NOT call assignTiers() here — it resets tiers and cancels shuffling.
+  // Ensure tiers exist (they should after Rank Students).
+  if (!tiers.top.length || !tiers.mid.length || !tiers.bot.length) {
+    setStatus('Tiers are empty. Click “Rank Students” (and optionally “Shuffle Tiers”) first.', 'err');
+    return;
+  }
 
-    teams = [];
-    for (let i = 0; i < teamCount; i++) {
-      teams.push({
-        team: i + 1,
-        top: tiers.top[i],
-        mid: tiers.mid[i],
-        bot: tiers.bot[i]
-      });
+  const teamCount = Math.min(tiers.top.length, tiers.mid.length, tiers.bot.length);
+  if (teamCount < 1) {
+    setStatus('Not enough students in tiers to form teams.', 'err');
+    return;
+  }
+
+  teams = [];
+  for (let i = 0; i < teamCount; i++) {
+    teams.push({
+      team: i + 1,
+      top: tiers.top[i],
+      mid: tiers.mid[i],
+      bot: tiers.bot[i]
+    });
+  }
+
+  renderTeams();
+  setStatus(`Created ${teams.length} teams.`, 'ok');
+});
+
     }
     renderTeams();
     setStatus(`Created ${teams.length} teams.`, 'ok');
@@ -419,7 +433,7 @@ Bob,11,234567891,11"></textarea>
       rosterWrap.innerHTML = '<p class="muted">No roster yet. Paste CSV and click “Rank Students”.</p>';
       return;
     }
-
+    const possibleTeams = Math.min(tiers.top.length, tiers.mid.length, tiers.bot.length);
     const rows = ranked.map(s => `
       <tr>
         <td>${s.rank}</td>
@@ -440,6 +454,9 @@ Bob,11,234567891,11"></textarea>
         </thead>
         <tbody>${rows}</tbody>
       </table>
+      <p class="muted">
+  Possible teams (Top/Middle/Bottom): <strong>${possibleTeams}</strong>
+</p>
       <p class="muted">
         Tier counts — Top: <strong>${tiers.top.length}</strong>,
         Middle: <strong>${tiers.mid.length}</strong>,
