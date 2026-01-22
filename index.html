@@ -3,39 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Game Jam Team Shuffler (Top/Middle/Bottom)</title>
+  <title>Game Jam Team Shuffler (Top / Middle / Bottom)</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.35; }
     h1 { margin: 0 0 8px; }
-    .row { display: flex; gap: 16px; flex-wrap: wrap; }
-    .card { border: 1px solid #ccc; border-radius: 10px; padding: 14px; flex: 1; min-width: 320px; }
-    textarea { width: 100%; height: 160px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    button { padding: 8px 12px; margin: 6px 6px 0 0; cursor: pointer; }
-    input[type="number"], input[type="text"] { padding: 6px; }
-    select { padding: 6px; }
+    .muted { color:#666; font-size: 13px; }
+    .row { display:flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; }
+    .card { border: 1px solid #ccc; border-radius: 12px; padding: 14px; flex: 1; min-width: 340px; }
+    textarea { width: 100%; height: 170px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    button { padding: 8px 12px; margin: 6px 6px 0 0; cursor:pointer; }
+    input[type="text"], input[type="number"], select { padding: 6px; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ddd; padding: 6px; font-size: 14px; }
-    th { background: #f5f5f5; text-align: left; }
-    .muted { color: #666; font-size: 13px; }
-    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #eee; font-size: 12px; }
-    .ok { background: #e9f7ef; }
-    .warn { background: #fff6e5; }
-    .err { background: #fdecea; }
-    .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    .controls > div { display:flex; gap:6px; align-items:center; }
+    th, td { border: 1px solid #ddd; padding: 6px; font-size: 13px; }
+    th { background:#f5f5f5; text-align:left; }
+    .pill { display:inline-block; padding: 2px 8px; border-radius: 999px; background:#eee; font-size: 12px; }
+    .ok { background:#e9f7ef; }
+    .warn { background:#fff6e5; }
+    .err { background:#fdecea; }
+    .controls { display:flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .controls > div { display:flex; gap: 6px; align-items: center; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <h1>Game Jam Team Shuffler</h1>
   <div class="muted">
-    Load names + scores, rank automatically, split into Top/Middle/Bottom, shuffle, and generate 3-person teams.
-    Works offline. No data leaves your computer.
+    Load student names + scores, rank them, split into Top/Middle/Bottom, shuffle, and build teams of 3:
+    <strong>Top + Middle + Bottom</strong>. Works offline. Data stays on your computer.
   </div>
 
-  <div class="row" style="margin-top:14px;">
+  <div class="row">
     <div class="card">
-      <h2 style="margin:0 0 8px;">1) Input Students</h2>
+      <h2 style="margin:0 0 8px;">1) Input (CSV)</h2>
 
       <div class="controls">
         <div>
@@ -43,104 +44,126 @@
           <input id="csvFile" type="file" accept=".csv,text/csv"/>
         </div>
         <div>
-          <button id="loadSample">Load Sample</button>
+          <button id="loadSample">Load Sample (90)</button>
           <button id="clearAll">Clear</button>
         </div>
       </div>
 
       <p class="muted" style="margin:10px 0 6px;">
-        Paste CSV below. Required columns: <span class="mono">name</span>, <span class="mono">score</span>.
-        Optional: <span class="mono">id</span> (OSIS) and <span class="mono">grade</span>.
+        CSV must include headers: <span class="mono">name</span>, <span class="mono">score</span>.
+        Optional: <span class="mono">id</span>, <span class="mono">grade</span>.
       </p>
 
       <textarea id="csvInput" placeholder="name,score,id,grade
-Alice,18,123456789,10
-Bob,11,234567891,11"></textarea>
+Jane Doe,18,123456789,10
+John Smith,12,987654321,11"></textarea>
 
-      <div class="controls" style="margin-top:8px;">
-        <div>
-          <label><strong>Split mode:</strong></label>
-          <select id="splitMode">
-            <option value="fixed30">Fixed 30 / 30 / 30 (Top/Middle/Bottom)</option>
-            <option value="thirds">Automatic thirds (Top/Middle/Bottom)</option>
-          </select>
+      <div class="grid2" style="margin-top:10px;">
+        <div class="controls">
+          <div>
+            <label><strong>Split mode:</strong></label>
+            <select id="splitMode">
+              <option value="fixed30">Fixed 30 / 30 / 30</option>
+              <option value="thirds">Automatic thirds</option>
+            </select>
+          </div>
+          <div>
+            <label><strong>Seed (optional):</strong></label>
+            <input id="seedInput" type="text" placeholder="e.g., March6_2026"/>
+          </div>
         </div>
 
-        <div>
-          <label><strong>Seed (optional):</strong></label>
-          <input id="seedInput" type="text" placeholder="e.g., March6" />
-        </div>
-
-        <div>
-          <button id="rankBtn">Rank Students</button>
-          <button id="shuffleBtn">Shuffle Tiers</button>
-          <button id="makeTeamsBtn">Make Teams</button>
+        <div class="controls">
+          <div>
+            <label><strong>Max teams:</strong></label>
+            <input id="maxTeams" type="number" min="1" max="60" value="30" style="width:72px;"/>
+          </div>
+          <div>
+            <button id="rankBtn">Rank</button>
+            <button id="shuffleBtn">Shuffle</button>
+            <button id="makeTeamsBtn">Make Teams</button>
+          </div>
         </div>
       </div>
 
       <div id="status" style="margin-top:10px;">
-        <span class="pill warn">Not ranked yet</span>
+        <span class="pill warn">Paste/upload CSV, then click Rank.</span>
+      </div>
+
+      <div class="muted" style="margin-top:10px;">
+        Tip: If you want reproducible teams, set a seed (e.g., <span class="mono">March6_2026</span>), then Shuffle, then Make Teams.
       </div>
     </div>
 
     <div class="card">
-      <h2 style="margin:0 0 8px;">2) Ranked Roster</h2>
-      <div class="muted">Sorted by score (highest first). Tiering updates after ranking.</div>
+      <h2 style="margin:0 0 8px;">2) Roster (Ranked)</h2>
+      <div id="summary" class="muted">No roster yet.</div>
       <div id="rosterWrap"></div>
     </div>
   </div>
 
   <div class="card" style="margin-top:16px;">
-    <h2 style="margin:0 0 8px;">3) Teams Output</h2>
+    <h2 style="margin:0 0 8px;">3) Teams</h2>
     <div class="muted">
-      Teams are generated as: <strong>Top[i] + Middle[i] + Bottom[i]</strong> after shuffling within tiers.
+      Teams generated as: <strong>Top[i] + Middle[i] + Bottom[i]</strong> (after shuffle).
+      Extras remain unassigned.
     </div>
 
     <div class="controls" style="margin-top:10px;">
       <button id="exportCsvBtn">Export Teams CSV</button>
+      <button id="copyTeamsBtn">Copy Teams</button>
       <button id="printBtn">Print</button>
-      <button id="copyTeamsBtn">Copy Teams to Clipboard</button>
     </div>
 
     <div id="teamsWrap"></div>
+    <div id="extrasWrap" style="margin-top:10px;"></div>
   </div>
 
 <script>
-  // ---------- Utilities ----------
+  // ---------------------------
+  // Robust CSV parsing (commas + quotes)
+  // ---------------------------
   function parseCSV(text) {
-    // Simple CSV parser supporting commas + quotes
     const rows = [];
-    let i = 0, field = '', row = [], inQuotes = false;
+    let row = [];
+    let field = '';
+    let inQuotes = false;
 
-    function pushField() {
+    function endField() {
       row.push(field);
       field = '';
     }
-    function pushRow() {
-      // ignore empty final lines
+    function endRow() {
+      // ignore empty lines
       if (row.length === 1 && row[0].trim() === '') { row = []; return; }
       rows.push(row);
       row = [];
     }
 
-    while (i < text.length) {
+    for (let i = 0; i < text.length; i++) {
       const c = text[i];
 
       if (c === '"') {
-        if (inQuotes && text[i+1] === '"') { field += '"'; i += 2; continue; }
-        inQuotes = !inQuotes; i++; continue;
+        // Escaped quote inside quoted field
+        if (inQuotes && text[i+1] === '"') {
+          field += '"';
+          i++;
+          continue;
+        }
+        inQuotes = !inQuotes;
+        continue;
       }
-      if (!inQuotes && (c === ',')) { pushField(); i++; continue; }
-      if (!inQuotes && (c === '\n')) { pushField(); pushRow(); i++; continue; }
-      if (!inQuotes && (c === '\r')) { i++; continue; }
+
+      if (!inQuotes && c === ',') { endField(); continue; }
+      if (!inQuotes && c === '\n') { endField(); endRow(); continue; }
+      if (!inQuotes && c === '\r') { continue; }
 
       field += c;
-      i++;
     }
-    pushField();
-    pushRow();
+    endField();
+    endRow();
 
-    if (rows.length === 0) return { headers: [], data: [] };
+    if (!rows.length) return { headers: [], data: [] };
 
     const headers = rows[0].map(h => (h || '').trim().toLowerCase());
     const data = rows.slice(1).map(r => {
@@ -152,11 +175,19 @@ Bob,11,234567891,11"></textarea>
   }
 
   function toNumberSafe(v) {
-    const n = Number(v);
+    const n = Number(String(v).trim());
     return Number.isFinite(n) ? n : null;
   }
 
-  // Seeded RNG (mulberry32) for reproducible shuffles if seed provided
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[m]));
+  }
+
+  // ---------------------------
+  // Seeded RNG (optional)
+  // ---------------------------
   function seedToUint32(seedStr) {
     if (!seedStr) return null;
     let h = 2166136261;
@@ -166,28 +197,25 @@ Bob,11,234567891,11"></textarea>
     }
     return h >>> 0;
   }
+
   function mulberry32(a) {
     return function() {
       let t = a += 0x6D2B79F5;
       t = Math.imul(t ^ (t >>> 15), t | 1);
       t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    }
+    };
   }
 
-  function shuffleInPlace(arr, rng=Math.random) {
+  function shuffleInPlace(arr, rng) {
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(rng() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
   }
 
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  }
-
   function downloadText(filename, text) {
-    const blob = new Blob([text], {type: 'text/plain;charset=utf-8'});
+    const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = filename;
@@ -201,240 +229,104 @@ Bob,11,234567891,11"></textarea>
     await navigator.clipboard.writeText(text);
   }
 
-  // ---------- State ----------
-  let ranked = [];      // full ranked roster objects
-  let tiers = { top: [], mid: [], bot: [] };
-  let teams = [];       // teams output
+  // ---------------------------
+  // State
+  // ---------------------------
+  let roster = []; // ranked full roster
+  let tiers = { top: [], mid: [], bot: [], extra: [] }; // tier arrays (objects)
+  let teams = []; // output teams
 
-  // ---------- DOM ----------
+  // ---------------------------
+  // DOM
+  // ---------------------------
   const csvFile = document.getElementById('csvFile');
   const csvInput = document.getElementById('csvInput');
   const splitMode = document.getElementById('splitMode');
   const seedInput = document.getElementById('seedInput');
+  const maxTeamsInput = document.getElementById('maxTeams');
+
   const statusEl = document.getElementById('status');
+  const summaryEl = document.getElementById('summary');
   const rosterWrap = document.getElementById('rosterWrap');
   const teamsWrap = document.getElementById('teamsWrap');
+  const extrasWrap = document.getElementById('extrasWrap');
 
-  document.getElementById('loadSample').addEventListener('click', () => {
-    const sample = [
-      'name,score,id,grade',
-      'Aaliyah,18,1001,10',
-      'Brandon,12,1002,11',
-      'Carlos,9,1003,12',
-      'Dina,16,1004,10',
-      'Evan,7,1005,11',
-      'Fatima,14,1006,12',
-      'Gabe,11,1007,10',
-      'Hana,10,1008,11',
-      'Imani,15,1009,12'
-    ].join('\n');
-    csvInput.value = sample;
-    setStatus('Sample loaded. Click “Rank Students”.', 'warn');
-  });
-
-  document.getElementById('clearAll').addEventListener('click', () => {
-    csvInput.value = '';
-    ranked = [];
-    tiers = { top: [], mid: [], bot: [] };
-    teams = [];
-    renderRoster();
-    renderTeams();
-    setStatus('Cleared. Paste CSV then Rank Students.', 'warn');
-  });
-
-  csvFile.addEventListener('change', async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const text = await file.text();
-    csvInput.value = text;
-    setStatus(`Loaded ${file.name}. Click “Rank Students”.`, 'warn');
-  });
-
-  document.getElementById('rankBtn').addEventListener('click', () => {
-    try {
-      const { headers, data } = parseCSV(csvInput.value || '');
-      if (!headers.includes('name') || !headers.includes('score')) {
-        setStatus('CSV must include headers: name, score (optional: id, grade).', 'err');
-        return;
-      }
-
-      const cleaned = [];
-      for (const d of data) {
-        const name = (d.name || '').trim();
-        const score = toNumberSafe(d.score);
-        if (!name || score === null) continue;
-        cleaned.push({
-          name,
-          score,
-          id: (d.id || '').trim(),
-          grade: (d.grade || '').trim()
-        });
-      }
-
-      if (cleaned.length < 3) {
-        setStatus('Need at least 3 valid rows (name + numeric score).', 'err');
-        return;
-      }
-
-      cleaned.sort((a,b) => b.score - a.score);
-
-      // attach rank
-      ranked = cleaned.map((s, idx) => ({ ...s, rank: idx + 1, tier: '' }));
-
-      assignTiers();
-      renderRoster();
-      teams = [];
-      renderTeams();
-      setStatus(`Ranked ${ranked.length} students. Now you can Shuffle Tiers and Make Teams.`, 'ok');
-    } catch (err) {
-      setStatus(`Error ranking: ${err?.message || err}`, 'err');
-    }
-  });
-
-  document.getElementById('shuffleBtn').addEventListener('click', () => {
-    if (ranked.length === 0) { setStatus('Rank students first.', 'warn'); return; }
-    assignTiers(); // ensure tiers are fresh
-    const seed = seedToUint32(seedInput.value.trim());
-    const rng = seed === null ? Math.random : mulberry32(seed);
-
-    shuffleInPlace(tiers.top, rng);
-    shuffleInPlace(tiers.mid, rng);
-    shuffleInPlace(tiers.bot, rng);
-
-    teams = [];
-    renderTeams();
-    setStatus('Shuffled within tiers. Click “Make Teams”.', 'ok');
-  });
-
-  document.getElementById('makeTeamsBtn').addEventListener('click', () => {
-  if (ranked.length === 0) { setStatus('Rank students first.', 'warn'); return; }
-
-  // IMPORTANT: do NOT call assignTiers() here — it resets tiers and cancels shuffling.
-  // Ensure tiers exist (they should after Rank Students).
-  if (!tiers.top.length || !tiers.mid.length || !tiers.bot.length) {
-    setStatus('Tiers are empty. Click “Rank Students” (and optionally “Shuffle Tiers”) first.', 'err');
-    return;
+  function setStatus(msg, kind) {
+    const cls = kind === 'ok' ? 'ok' : (kind === 'err' ? 'err' : 'warn');
+    statusEl.innerHTML = `<span class="pill ${cls}">${escapeHtml(msg)}</span>`;
   }
 
-  const teamCount = Math.min(tiers.top.length, tiers.mid.length, tiers.bot.length);
-  if (teamCount < 1) {
-    setStatus('Not enough students in tiers to form teams.', 'err');
-    return;
-  }
+  // ---------------------------
+  // Tiering logic
+  // ---------------------------
+  function buildTiersFromRoster() {
+    tiers = { top: [], mid: [], bot: [], extra: [] };
 
-  teams = [];
-  for (let i = 0; i < teamCount; i++) {
-    teams.push({
-      team: i + 1,
-      top: tiers.top[i],
-      mid: tiers.mid[i],
-      bot: tiers.bot[i]
-    });
-  }
-
-  renderTeams();
-  setStatus(`Created ${teams.length} teams.`, 'ok');
-});
-
-    }
-    renderTeams();
-    setStatus(`Created ${teams.length} teams.`, 'ok');
-  });
-
-  document.getElementById('exportCsvBtn').addEventListener('click', () => {
-    if (teams.length === 0) { setStatus('Generate teams first.', 'warn'); return; }
-    const lines = [];
-    lines.push('team,top_name,top_id,top_grade,middle_name,middle_id,middle_grade,bottom_name,bottom_id,bottom_grade');
-    for (const t of teams) {
-      lines.push([
-        t.team,
-        csvCell(t.top?.name), csvCell(t.top?.id), csvCell(t.top?.grade),
-        csvCell(t.mid?.name), csvCell(t.mid?.id), csvCell(t.mid?.grade),
-        csvCell(t.bot?.name), csvCell(t.bot?.id), csvCell(t.bot?.grade),
-      ].join(','));
-    }
-    downloadText('gamejam_teams.csv', lines.join('\n'));
-    setStatus('Exported teams CSV.', 'ok');
-  });
-
-  document.getElementById('printBtn').addEventListener('click', () => {
-    window.print();
-  });
-
-  document.getElementById('copyTeamsBtn').addEventListener('click', async () => {
-    if (teams.length === 0) { setStatus('Generate teams first.', 'warn'); return; }
-    const text = teams.map(t =>
-      `Team ${t.team}: ${t.top.name} | ${t.mid.name} | ${t.bot.name}`
-    ).join('\n');
-    try {
-      await copyToClipboard(text);
-      setStatus('Copied teams to clipboard.', 'ok');
-    } catch {
-      setStatus('Could not copy automatically (browser permissions).', 'warn');
-    }
-  });
-
-  function csvCell(v) {
-    const s = String(v ?? '');
-    if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
-    return s;
-  }
-
-  function assignTiers() {
     const mode = splitMode.value;
-
-    // Reset tiers
-    tiers = { top: [], mid: [], bot: [] };
+    const n = roster.length;
 
     if (mode === 'fixed30') {
-      // Fixed Top 30 / Mid 30 / Bottom 30 (as many as available)
-      const topN = ranked.slice(0, 30);
-      const midN = ranked.slice(30, 60);
-      const botN = ranked.slice(60, 90);
-
-      tiers.top = [...topN];
-      tiers.mid = [...midN];
-      tiers.bot = [...botN];
-
-    } else {
-      // Automatic thirds, based on total count
-      const n = ranked.length;
-      const size = Math.floor(n / 3);
-      // Remaining students (if not divisible by 3) go to TOP then MIDDLE for fairness
-      const remainder = n - size*3;
-      const topSize = size + (remainder >= 1 ? 1 : 0);
-      const midSize = size + (remainder >= 2 ? 1 : 0);
-      const botSize = size;
-
-      tiers.top = ranked.slice(0, topSize);
-      tiers.mid = ranked.slice(topSize, topSize + midSize);
-      tiers.bot = ranked.slice(topSize + midSize, topSize + midSize + botSize);
-    }
-
-    // tag tier on ranked list for display (by identity match)
-    const topSet = new Set(tiers.top.map(s => s.id ? `id:${s.id}` : `name:${s.name}|score:${s.score}|rank:${s.rank}`));
-    const midSet = new Set(tiers.mid.map(s => s.id ? `id:${s.id}` : `name:${s.name}|score:${s.score}|rank:${s.rank}`));
-    const botSet = new Set(tiers.bot.map(s => s.id ? `id:${s.id}` : `name:${s.name}|score:${s.score}|rank:${s.rank}`));
-
-    ranked = ranked.map(s => {
-      const key = s.id ? `id:${s.id}` : `name:${s.name}|score:${s.score}|rank:${s.rank}`;
-      let tier = '';
-      if (topSet.has(key)) tier = 'TOP';
-      else if (midSet.has(key)) tier = 'MIDDLE';
-      else if (botSet.has(key)) tier = 'BOTTOM';
-      return { ...s, tier };
-    });
-
-    renderRoster();
-  }
-
-  function renderRoster() {
-    if (ranked.length === 0) {
-      rosterWrap.innerHTML = '<p class="muted">No roster yet. Paste CSV and click “Rank Students”.</p>';
+      tiers.top = roster.slice(0, 30);
+      tiers.mid = roster.slice(30, 60);
+      tiers.bot = roster.slice(60, 90);
+      tiers.extra = roster.slice(90);
       return;
     }
+
+    // Automatic thirds (as equal as possible)
+    const base = Math.floor(n / 3);
+    const remainder = n - base * 3;
+
+    const topSize = base + (remainder >= 1 ? 1 : 0);
+    const midSize = base + (remainder >= 2 ? 1 : 0);
+    const botSize = base;
+
+    tiers.top = roster.slice(0, topSize);
+    tiers.mid = roster.slice(topSize, topSize + midSize);
+    tiers.bot = roster.slice(topSize + midSize, topSize + midSize + botSize);
+    tiers.extra = roster.slice(topSize + midSize + botSize);
+  }
+
+  function annotateTierForDisplay() {
+    // Build identity keys; prefer id if present
+    const key = (s) => s.id ? `id:${s.id}` : `name:${s.name}|score:${s.score}|rank:${s.rank}`;
+    const topSet = new Set(tiers.top.map(key));
+    const midSet = new Set(tiers.mid.map(key));
+    const botSet = new Set(tiers.bot.map(key));
+    const extraSet = new Set(tiers.extra.map(key));
+
+    roster = roster.map(s => {
+      const k = key(s);
+      let tier = '';
+      if (topSet.has(k)) tier = 'TOP';
+      else if (midSet.has(k)) tier = 'MIDDLE';
+      else if (botSet.has(k)) tier = 'BOTTOM';
+      else if (extraSet.has(k)) tier = 'EXTRA';
+      return { ...s, tier };
+    });
+  }
+
+  // ---------------------------
+  // Rendering
+  // ---------------------------
+  function renderRoster() {
+    if (!roster.length) {
+      summaryEl.textContent = 'No roster yet.';
+      rosterWrap.innerHTML = '<p class="muted">Paste or upload CSV and click Rank.</p>';
+      return;
+    }
+
     const possibleTeams = Math.min(tiers.top.length, tiers.mid.length, tiers.bot.length);
-    const rows = ranked.map(s => `
+    summaryEl.innerHTML = `
+      Students ranked: <strong>${roster.length}</strong> |
+      Top: <strong>${tiers.top.length}</strong>,
+      Middle: <strong>${tiers.mid.length}</strong>,
+      Bottom: <strong>${tiers.bot.length}</strong>,
+      Extra: <strong>${tiers.extra.length}</strong> |
+      Possible teams: <strong>${possibleTeams}</strong>
+    `;
+
+    const rows = roster.slice(0, 120).map(s => `
       <tr>
         <td>${s.rank}</td>
         <td>${escapeHtml(s.name)}</td>
@@ -448,59 +340,256 @@ Bob,11,234567891,11"></textarea>
     rosterWrap.innerHTML = `
       <table>
         <thead>
-          <tr>
-            <th>Rank</th><th>Name</th><th>ID</th><th>Grade</th><th>Score</th><th>Tier</th>
-          </tr>
+          <tr><th>Rank</th><th>Name</th><th>ID</th><th>Grade</th><th>Score</th><th>Tier</th></tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
-      <p class="muted">
-  Possible teams (Top/Middle/Bottom): <strong>${possibleTeams}</strong>
-</p>
-      <p class="muted">
-        Tier counts — Top: <strong>${tiers.top.length}</strong>,
-        Middle: <strong>${tiers.mid.length}</strong>,
-        Bottom: <strong>${tiers.bot.length}</strong>.
-      </p>
+      <div class="muted">Showing first 120 ranked students.</div>
     `;
   }
 
   function renderTeams() {
-    if (teams.length === 0) {
-      teamsWrap.innerHTML = '<p class="muted">No teams yet. Click “Shuffle Tiers” (optional) then “Make Teams”.</p>';
+    if (!teams.length) {
+      teamsWrap.innerHTML = '<p class="muted">No teams yet. Click Shuffle (optional) then Make Teams.</p>';
+      extrasWrap.innerHTML = '';
       return;
     }
 
     const rows = teams.map(t => `
       <tr>
         <td>${t.team}</td>
-        <td>${escapeHtml(t.top.name)} <span class="pill">${escapeHtml(t.top.grade||'')}</span></td>
-        <td>${escapeHtml(t.mid.name)} <span class="pill">${escapeHtml(t.mid.grade||'')}</span></td>
-        <td>${escapeHtml(t.bot.name)} <span class="pill">${escapeHtml(t.bot.grade||'')}</span></td>
+        <td>${escapeHtml(t.top.name)} <span class="pill">${escapeHtml(t.top.grade || '')}</span></td>
+        <td>${escapeHtml(t.mid.name)} <span class="pill">${escapeHtml(t.mid.grade || '')}</span></td>
+        <td>${escapeHtml(t.bot.name)} <span class="pill">${escapeHtml(t.bot.grade || '')}</span></td>
       </tr>
     `).join('');
 
     teamsWrap.innerHTML = `
       <table>
-        <thead>
-          <tr>
-            <th>Team</th><th>Top</th><th>Middle</th><th>Bottom</th>
-          </tr>
-        </thead>
+        <thead><tr><th>Team</th><th>Top</th><th>Middle</th><th>Bottom</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
-      <p class="muted">
-        Tip: When you like the teams, export CSV (or copy to clipboard) and save it. If you shuffle again, teams will change.
-      </p>
     `;
+
+    // Compute unassigned students (from tiers beyond teamCount)
+    const teamCount = teams.length;
+    const unassigned = [
+      ...tiers.top.slice(teamCount).map(s => ({...s, _tier:'TOP'})),
+      ...tiers.mid.slice(teamCount).map(s => ({...s, _tier:'MIDDLE'})),
+      ...tiers.bot.slice(teamCount).map(s => ({...s, _tier:'BOTTOM'})),
+      ...tiers.extra.map(s => ({...s, _tier:'EXTRA'}))
+    ];
+
+    if (!unassigned.length) {
+      extrasWrap.innerHTML = `<div class="muted"><strong>Unassigned:</strong> none</div>`;
+    } else {
+      const list = unassigned.slice(0, 60).map(s =>
+        `<li>${escapeHtml(s.name)} <span class="pill">${escapeHtml(s._tier)}</span> <span class="muted">${escapeHtml(s.grade||'')}</span></li>`
+      ).join('');
+      extrasWrap.innerHTML = `
+        <div class="muted"><strong>Unassigned students:</strong> ${unassigned.length} (showing up to 60)</div>
+        <ul>${list}</ul>
+      `;
+    }
   }
 
-  function setStatus(msg, kind) {
-    const cls = kind === 'ok' ? 'ok' : (kind === 'err' ? 'err' : 'warn');
-    statusEl.innerHTML = `<span class="pill ${cls}">${escapeHtml(msg)}</span>`;
+  // ---------------------------
+  // Actions
+  // ---------------------------
+  async function loadFileToTextarea(file) {
+    const text = await file.text();
+    csvInput.value = text;
+    setStatus(`Loaded ${file.name}. Click Rank.`, 'warn');
   }
 
-  // Initial
+  function rankStudents() {
+    const { headers, data } = parseCSV(csvInput.value || '');
+
+    if (!headers.includes('name') || !headers.includes('score')) {
+      setStatus('CSV must include headers: name, score (optional: id, grade).', 'err');
+      return;
+    }
+
+    // Clean rows: require non-empty name and numeric score
+    const cleaned = [];
+    for (const d of data) {
+      const name = (d.name || '').trim();
+      const score = toNumberSafe(d.score);
+      if (!name || score === null) continue;
+
+      cleaned.push({
+        name,
+        score,
+        id: (d.id || '').trim(),
+        grade: (d.grade || '').trim()
+      });
+    }
+
+    if (cleaned.length < 3) {
+      setStatus('Need at least 3 valid rows with name + numeric score.', 'err');
+      return;
+    }
+
+    // Sort by score desc; tie-breaker by name asc for stability
+    cleaned.sort((a, b) => (b.score - a.score) || a.name.localeCompare(b.name));
+
+    roster = cleaned.map((s, idx) => ({
+      ...s,
+      rank: idx + 1,
+      tier: ''
+    }));
+
+    // Build tiers and annotate
+    buildTiersFromRoster();
+    annotateTierForDisplay();
+
+    // Reset teams
+    teams = [];
+    renderRoster();
+    renderTeams();
+
+    const possibleTeams = Math.min(tiers.top.length, tiers.mid.length, tiers.bot.length);
+    setStatus(`Ranked ${roster.length} students. Possible teams: ${possibleTeams}.`, 'ok');
+  }
+
+  function shuffleTiers() {
+    if (!roster.length) { setStatus('Rank students first.', 'warn'); return; }
+
+    // Rebuild tiers fresh from roster ranks (so shuffle always starts clean)
+    buildTiersFromRoster();
+
+    const seed = seedToUint32(seedInput.value.trim());
+    const rng = seed === null ? Math.random : mulberry32(seed);
+
+    shuffleInPlace(tiers.top, rng);
+    shuffleInPlace(tiers.mid, rng);
+    shuffleInPlace(tiers.bot, rng);
+
+    annotateTierForDisplay();
+    teams = [];
+    renderRoster();
+    renderTeams();
+    setStatus('Shuffled within tiers. Click Make Teams.', 'ok');
+  }
+
+  function makeTeams() {
+    if (!roster.length) { setStatus('Rank students first.', 'warn'); return; }
+
+    const possibleTeams = Math.min(tiers.top.length, tiers.mid.length, tiers.bot.length);
+    const maxTeams = Math.max(1, Math.min(Number(maxTeamsInput.value || 30), 60));
+    const teamCount = Math.min(possibleTeams, maxTeams);
+
+    if (teamCount < 1) {
+      setStatus('Not enough students in tiers to form teams.', 'err');
+      teams = [];
+      renderTeams();
+      return;
+    }
+
+    teams = [];
+    for (let i = 0; i < teamCount; i++) {
+      teams.push({
+        team: i + 1,
+        top: tiers.top[i],
+        mid: tiers.mid[i],
+        bot: tiers.bot[i]
+      });
+    }
+
+    renderTeams();
+    setStatus(`Created ${teams.length} teams.`, 'ok');
+  }
+
+  function exportTeamsCSV() {
+    if (!teams.length) { setStatus('Generate teams first.', 'warn'); return; }
+
+    const lines = [];
+    lines.push('team,top_name,top_id,top_grade,middle_name,middle_id,middle_grade,bottom_name,bottom_id,bottom_grade');
+    for (const t of teams) {
+      lines.push([
+        t.team,
+        csvCell(t.top.name), csvCell(t.top.id), csvCell(t.top.grade),
+        csvCell(t.mid.name), csvCell(t.mid.id), csvCell(t.mid.grade),
+        csvCell(t.bot.name), csvCell(t.bot.id), csvCell(t.bot.grade)
+      ].join(','));
+    }
+    downloadText('gamejam_teams.csv', lines.join('\n'));
+    setStatus('Exported teams CSV.', 'ok');
+  }
+
+  function csvCell(v) {
+    const s = String(v ?? '');
+    if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+  }
+
+  async function copyTeams() {
+    if (!teams.length) { setStatus('Generate teams first.', 'warn'); return; }
+    const text = teams.map(t => `Team ${t.team}: ${t.top.name} | ${t.mid.name} | ${t.bot.name}`).join('\n');
+    try {
+      await copyToClipboard(text);
+      setStatus('Copied teams to clipboard.', 'ok');
+    } catch (e) {
+      setStatus('Could not copy (browser permission). Try Export CSV instead.', 'warn');
+    }
+  }
+
+  function clearAll() {
+    csvInput.value = '';
+    roster = [];
+    tiers = { top: [], mid: [], bot: [], extra: [] };
+    teams = [];
+    renderRoster();
+    renderTeams();
+    setStatus('Cleared. Paste/upload CSV, then click Rank.', 'warn');
+  }
+
+  function loadSample90() {
+    const lines = ['name,score,id,grade'];
+    const first = ["Aaliyah","Brandon","Carlos","Dina","Evan","Fatima","Gabe","Hana","Imani","Jaden","Kiara","Luis","Maya","Nina","Omar","Priya","Quentin","Rosa","Sam","Tariq"];
+    const last = ["Johnson","Smith","Garcia","Martinez","Lee","Brown","Williams","Davis","Rodriguez","Wilson"];
+    // deterministic sample
+    let idBase = 100000000;
+    for (let i = 1; i <= 90; i++) {
+      const name = `${first[i % first.length]} ${last[(i * 3) % last.length]}`;
+      const score = 5 + ((i * 7) % 16); // 5..20
+      const id = idBase + i;
+      const grade = [10,11,12][i % 3];
+      lines.push(`${name},${score},${id},${grade}`);
+    }
+    csvInput.value = lines.join('\n');
+    setStatus('Sample (90) loaded. Click Rank.', 'warn');
+  }
+
+  // ---------------------------
+  // Wire up events
+  // ---------------------------
+  document.getElementById('rankBtn').addEventListener('click', rankStudents);
+  document.getElementById('shuffleBtn').addEventListener('click', shuffleTiers);
+  document.getElementById('makeTeamsBtn').addEventListener('click', makeTeams);
+  document.getElementById('exportCsvBtn').addEventListener('click', exportTeamsCSV);
+  document.getElementById('copyTeamsBtn').addEventListener('click', copyTeams);
+  document.getElementById('printBtn').addEventListener('click', () => window.print());
+  document.getElementById('clearAll').addEventListener('click', clearAll);
+  document.getElementById('loadSample').addEventListener('click', loadSample90);
+
+  csvFile.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) loadFileToTextarea(file);
+  });
+
+  // If split mode changes after ranking, rebuild tiers and clear teams
+  splitMode.addEventListener('change', () => {
+    if (!roster.length) return;
+    buildTiersFromRoster();
+    annotateTierForDisplay();
+    teams = [];
+    renderRoster();
+    renderTeams();
+    setStatus('Split mode changed. Click Shuffle (optional) then Make Teams.', 'warn');
+  });
+
+  // Initial render
   renderRoster();
   renderTeams();
 </script>
