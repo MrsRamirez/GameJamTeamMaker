@@ -3,10 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Game Jam Team Shuffler (Kahoot XLSX Supported)</title>
-
-  <!-- XLSX parser (SheetJS). If CDN blocked, host locally and change this to ./libs/xlsx.full.min.js -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <title>Game Jam Team Shuffler (CSV Only)</title>
 
   <style>
     :root{
@@ -21,6 +18,20 @@
       --err:rgba(239,68,68,0.18);
       --shadow:0 12px 30px rgba(0,0,0,0.35);
 
+      /* Role tones (tiles) */
+      --role-blue-bg:rgba(59,130,246,0.16);
+      --role-blue-br:rgba(59,130,246,0.32);
+      --role-blue-ac:rgba(147,197,253,0.95);
+
+      --role-yellow-bg:rgba(245,158,11,0.16);
+      --role-yellow-br:rgba(245,158,11,0.34);
+      --role-yellow-ac:rgba(253,230,138,0.95);
+
+      --role-green-bg:rgba(34,197,94,0.16);
+      --role-green-br:rgba(34,197,94,0.32);
+      --role-green-ac:rgba(187,247,208,0.95);
+
+      /* Team table column tint */
       --col-blue: rgba(59,130,246,0.12);
       --col-yellow: rgba(245,158,11,0.12);
       --col-green: rgba(34,197,94,0.12);
@@ -41,7 +52,7 @@
     .container{max-width:1200px;margin:0 auto;padding:22px 18px 40px;}
     header{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;margin-bottom:14px;}
     h1{margin:0 0 8px;font-size:clamp(22px,3.2vw,34px);letter-spacing:-0.02em;line-height:1.05;}
-    .subtitle{margin-top:6px;color:var(--muted);font-size:14px;max-width:90ch;}
+    .subtitle{margin-top:6px;color:var(--muted);font-size:14px;max-width:95ch;}
     .badge{
       display:inline-flex;align-items:center;gap:8px;padding:8px 12px;
       border:1px solid var(--border);border-radius:999px;background:rgba(255,255,255,0.06);
@@ -61,24 +72,19 @@
     @media (max-width:980px){.row{grid-template-columns:1fr;}}
 
     textarea{
-      width:100%;height:190px;border-radius:14px;border:1px solid var(--border);
+      width:100%;height:240px;border-radius:14px;border:1px solid var(--border);
       background:rgba(0,0,0,0.25);color:var(--text);padding:12px;outline:none;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,0.04);
     }
 
-    input[type="text"], input[type="number"], select, input[type="file"]{
+    input[type="text"], input[type="number"], select{
       border-radius:12px;border:1px solid var(--border);
       background:rgba(0,0,0,0.22);color:var(--text);
       padding:9px 10px;outline:none;min-height:38px;
-      max-width: 100%;
     }
 
-    .controls{
-      display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px;
-    }
-    .controls > div{
-      display:flex;gap:8px;align-items:center;flex-wrap:wrap;
-      min-width: 220px;
-    }
+    .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px;}
+    .controls > div{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
 
     button{
       border:1px solid rgba(255,255,255,0.16);
@@ -104,25 +110,57 @@
       width:100%;border-collapse:separate;border-spacing:0;margin-top:10px;overflow:hidden;
       border-radius:14px;border:1px solid var(--border);background:rgba(0,0,0,0.18);
     }
-    th, td{padding:9px 10px;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.09);}
+    th, td{padding:9px 10px;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.09);vertical-align:top;}
     th{
       text-align:left;color:rgba(255,255,255,0.88);background:rgba(255,255,255,0.06);
       font-weight:750;position:sticky;top:0;z-index:1;
     }
     tr:last-child td{border-bottom:none;}
 
+    /* Teams column color coding */
     .teams-table th:nth-child(2), .teams-table td:nth-child(2){ background: var(--col-blue); }
     .teams-table th:nth-child(3), .teams-table td:nth-child(3){ background: var(--col-yellow); }
     .teams-table th:nth-child(4), .teams-table td:nth-child(4){ background: var(--col-green); }
+    .teams-table th:nth-child(2){ color: rgba(147,197,253,0.98); }
+    .teams-table th:nth-child(3){ color: rgba(253,230,138,0.98); }
+    .teams-table th:nth-child(4){ color: rgba(187,247,208,0.98); }
 
-    .small-note{
-      margin-top:8px;
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,0.14);
-      background:rgba(255,255,255,0.05);
-      color:var(--muted);
-      font-size:13px;
+    .role-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:10px;}
+    @media (max-width:980px){.role-grid{grid-template-columns:1fr;}}
+    .role-card{
+      border-radius:16px;border:1px solid var(--border);padding:12px;box-shadow:var(--shadow);
+      position:relative;overflow:hidden;background:var(--card-2);
+    }
+    .role-card::before{
+      content:"";position:absolute;inset:-2px -2px auto -2px;height:56px;opacity:0.45;
+      filter:blur(10px);pointer-events:none;
+    }
+    .role-card.leader{background:linear-gradient(180deg,var(--role-blue-bg),rgba(255,255,255,0.07));border-color:var(--role-blue-br);}
+    .role-card.leader::before{background:radial-gradient(500px 80px at 30% 20%, rgba(59,130,246,0.55), transparent 60%);}
+    .role-card.designer{background:linear-gradient(180deg,var(--role-yellow-bg),rgba(255,255,255,0.07));border-color:var(--role-yellow-br);}
+    .role-card.designer::before{background:radial-gradient(500px 80px at 30% 20%, rgba(245,158,11,0.55), transparent 60%);}
+    .role-card.builder{background:linear-gradient(180deg,var(--role-green-bg),rgba(255,255,255,0.07));border-color:var(--role-green-br);}
+    .role-card.builder::before{background:radial-gradient(500px 80px at 30% 20%, rgba(34,197,94,0.55), transparent 60%);}
+
+    .role-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;position:relative;z-index:1;}
+    .role-title h3{margin:0;font-size:14px;letter-spacing:-0.01em;}
+    .tag{
+      padding:3px 10px;border-radius:999px;font-size:12px;border:1px solid rgba(255,255,255,0.14);
+      background:rgba(0,0,0,0.15);color:rgba(255,255,255,0.84);white-space:nowrap;position:relative;z-index:1;
+    }
+    .tag.leader{border-color:var(--role-blue-br);color:var(--role-blue-ac);}
+    .tag.designer{border-color:var(--role-yellow-br);color:var(--role-yellow-ac);}
+    .tag.builder{border-color:var(--role-green-br);color:var(--role-green-ac);}
+    .role-card ul{margin:8px 0 0 18px;color:rgba(255,255,255,0.88);font-size:13px;position:relative;z-index:1;}
+    .role-card p{margin:8px 0 0;color:var(--muted);font-size:13px;position:relative;z-index:1;}
+
+    .hint{
+      margin-top:10px;padding:10px 12px;border-radius:14px;border:1px dashed rgba(255,255,255,0.22);
+      background:rgba(0,0,0,0.14);color:var(--muted);font-size:13px;
+    }
+    .hint-quote{
+      text-align:center;font-weight:900;font-size:18px;line-height:1.35;letter-spacing:0.01em;
+      color:rgba(255,255,255,0.95);
     }
   </style>
 </head>
@@ -131,38 +169,85 @@
   <div class="container">
     <header>
       <div>
-        <h1>Game Jam Team Shuffler</h1>
+        <h1>Game Jam Team Shuffler (CSV Only)</h1>
         <div class="subtitle">
-          Upload <b>Kahoot XLSX</b> or paste <b>CSV</b>. Kahoot blend:
-          <b>score = (accuracy × 10) + speed_bonus</b> (fallback to Total Score if Accuracy is missing).
+          Paste <b>CSV</b> with headers <span class="mono">name,score</span>. Then:
+          <b>Assign Roles</b> → (optional) <b>Shuffle Roles</b> → <b>Build Teams</b>.
         </div>
       </div>
       <div class="badge">
-        <span>Team formula:</span>
+        <span>Teams:</span>
         <b>Leader + Designer + Builder</b>
       </div>
     </header>
 
+    <div class="card">
+      <h2>Role Descriptions</h2>
+      <div class="muted">These labels emphasize contribution. Every role matters in game-making.</div>
+
+      <div class="role-grid">
+        <div class="role-card leader">
+          <div class="role-title">
+            <h3>Leader</h3>
+            <span class="tag leader">Guides the team</span>
+          </div>
+          <ul>
+            <li>Keep the team moving and on time</li>
+            <li>Make sure everyone is heard</li>
+            <li>Help the team decide what to try next</li>
+          </ul>
+          <p><b>Leaders do not</b> need to be the best coder or speaker.</p>
+        </div>
+
+        <div class="role-card designer">
+          <div class="role-title">
+            <h3>Designer</h3>
+            <span class="tag designer">Shapes the experience</span>
+          </div>
+          <ul>
+            <li>Think about the player’s experience</li>
+            <li>Help shape rules, story, and choices</li>
+            <li>Ask: “Does this make sense to a player?”</li>
+          </ul>
+          <p><b>Designers do not</b> need to be “good at art.”</p>
+        </div>
+
+        <div class="role-card builder">
+          <div class="role-title">
+            <h3>Builder</h3>
+            <span class="tag builder">Makes it playable</span>
+          </div>
+          <ul>
+            <li>Help turn ideas into a playable prototype</li>
+            <li>Set up the game (paper or digital)</li>
+            <li>Test things and notice what breaks</li>
+          </ul>
+          <p><b>Builders do not</b> need to know how to code.</p>
+        </div>
+      </div>
+
+      <div class="hint">
+        <div class="hint-quote">“Great games need all three roles. Today is about testing ideas, not perfection.”</div>
+      </div>
+    </div>
+
     <div class="row">
       <!-- INPUT -->
       <div class="card">
-        <h2>1) Load Results</h2>
-
-        <div class="controls">
-          <div>
-            <label for="fileAny"><b>Choose file:</b></label>
-            <input id="fileAny" type="file"
-                   accept=".csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"/>
-          </div>
-          <div>
-            <button class="secondary" id="loadSample">Load Sample (90 CSV)</button>
-            <button class="secondary" id="clearAll">Clear</button>
-          </div>
+        <h2>1) Paste CSV</h2>
+        <div class="muted">
+          Required format:
+          <span class="mono">name,score</span>.
+          Score can be any number (higher = more likely to be a Leader tier).
         </div>
 
-        <div class="small-note">
-          There is no “Upload” button. Selecting a file loads it automatically.
-          If your dropdowns show only “(auto)”, the page did not detect headers—this version uses stronger header detection.
+        <textarea id="csvInput" placeholder="name,score
+Jane Doe,18
+John Smith,12"></textarea>
+
+        <div class="controls">
+          <button class="secondary" id="loadSample">Load Sample (90)</button>
+          <button class="secondary" id="clearAll">Clear</button>
         </div>
 
         <div class="controls" style="margin-top:12px;">
@@ -185,33 +270,6 @@
           </div>
         </div>
 
-        <!-- Kahoot mapping -->
-        <div class="controls" style="margin-top:10px;">
-          <div>
-            <label><b>Name column:</b></label>
-            <select id="colName"><option value="">(auto)</option></select>
-          </div>
-          <div>
-            <label><b>Total score:</b></label>
-            <select id="colTotal"><option value="">(auto)</option></select>
-          </div>
-          <div>
-            <label><b>Accuracy:</b></label>
-            <select id="colAccuracy"><option value="">(auto)</option></select>
-          </div>
-          <div>
-            <label><b>Speed bonus:</b></label>
-            <select id="colSpeed"><option value="">(auto)</option></select>
-          </div>
-        </div>
-
-        <p class="muted" style="margin:10px 0 6px;">
-          Or paste CSV: required headers are <span class="mono">name</span>, <span class="mono">score</span>.
-        </p>
-        <textarea id="csvInput" placeholder="name,score
-Jane Doe,18
-John Smith,12"></textarea>
-
         <div class="controls">
           <button id="assignRolesBtn">Assign Roles</button>
           <button id="shuffleBtn">Shuffle Roles</button>
@@ -219,16 +277,14 @@ John Smith,12"></textarea>
         </div>
 
         <div class="status" id="status">
-          <span class="pill warn">Choose a Kahoot XLSX or paste CSV, then click Assign Roles.</span>
+          <span class="pill warn">Paste CSV and click Assign Roles.</span>
         </div>
       </div>
 
       <!-- TEAMS -->
       <div class="card">
         <h2>2) Teams</h2>
-        <div class="muted">
-          Teams generated as: <b>Leader + Designer + Builder</b>. Extras remain unassigned.
-        </div>
+        <div class="muted">Teams will appear here. Export or copy once ready.</div>
 
         <div class="controls" style="margin-top:10px;">
           <button id="exportCsvBtn">Export Teams CSV</button>
@@ -250,16 +306,10 @@ John Smith,12"></textarea>
 
 <script>
   // ========= DOM =========
-  const fileAny = document.getElementById('fileAny');
   const csvInput = document.getElementById('csvInput');
   const splitMode = document.getElementById('splitMode');
   const seedInput = document.getElementById('seedInput');
   const maxTeamsInput = document.getElementById('maxTeams');
-
-  const colName = document.getElementById('colName');
-  const colTotal = document.getElementById('colTotal');
-  const colAccuracy = document.getElementById('colAccuracy');
-  const colSpeed = document.getElementById('colSpeed');
 
   const statusEl = document.getElementById('status');
   const summaryEl = document.getElementById('summary');
@@ -278,28 +328,15 @@ John Smith,12"></textarea>
     statusEl.innerHTML = `<span class="pill ${cls}">${escapeHtml(msg)}</span>`;
   }
 
-  function ensureXLSXLoaded(){
-    if (typeof XLSX === "undefined") {
-      setStatus("XLSX library did not load. Your network may block the CDN. Host xlsx.full.min.js locally in your repo.", "err");
-      return false;
-    }
-    return true;
-  }
-
-  // ========= Numbers =========
   function toNumberSafe(v){
     if (v === null || v === undefined) return null;
     const s = String(v).trim();
     if (!s) return null;
-
-    const pctMatch = s.match(/^(\d+(\.\d+)?)\s*%$/);
-    if (pctMatch) return Number(pctMatch[1]);
-
     const n = Number(s);
     return Number.isFinite(n) ? n : null;
   }
 
-  // ========= CSV =========
+  // ========= CSV parsing (handles quoted commas) =========
   function parseCSV(text) {
     const rows = [];
     let row = [];
@@ -308,7 +345,7 @@ John Smith,12"></textarea>
 
     function endField(){ row.push(field); field=''; }
     function endRow(){
-      if (row.length === 1 && row[0].trim() === '') { row = []; return; }
+      if (row.length === 1 && row[0].show === '') { row = []; return; }
       rows.push(row); row=[];
     }
 
@@ -361,7 +398,7 @@ John Smith,12"></textarea>
     }
   }
 
-  // ========= Downloads / clipboard =========
+  // ========= Export / Copy =========
   function downloadText(filename, text){
     const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
     const url = URL.createObjectURL(blob);
@@ -381,161 +418,11 @@ John Smith,12"></textarea>
     return s;
   }
 
-  // ========= XLSX header detection (STRONGER) =========
-  function normKey(s){
-    return String(s || '').trim().toLowerCase().replace(/\s+/g,' ');
-  }
-
-  function autoPick(headers, candidates){
-    const normalized = headers.map(h => ({ raw:h, n:normKey(h) }));
-    for (const cand of candidates){
-      const c = cand.toLowerCase();
-      const found = normalized.find(h => h.n.includes(c));
-      if (found) return found.raw;
-    }
-    return '';
-  }
-
-  // SAFER: populate selects using DOM (not innerHTML)
-  function fillMappingDropdowns(headers){
-    const selects = [colName, colTotal, colAccuracy, colSpeed];
-    for (const sel of selects){
-      const keep = sel.value;
-      sel.textContent = '';
-      const optAuto = document.createElement('option');
-      optAuto.value = '';
-      optAuto.textContent = '(auto)';
-      sel.appendChild(optAuto);
-
-      for (const h of headers){
-        const opt = document.createElement('option');
-        opt.value = h;
-        opt.textContent = h;
-        sel.appendChild(opt);
-      }
-      if (keep && headers.includes(keep)) sel.value = keep;
-      else sel.value = '';
-    }
-  }
-
-  // Even stronger: finds header row by:
-  // 1) candidate match count, then
-  // 2) number of non-empty cells
-  async function parseKahootXLSX(file){
-    if (!ensureXLSXLoaded()) return { headers: [], rows: [] };
-
-    const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf, { type: "array" });
-
-    // Kahoot is usually first sheet; if not, we still try first.
-    const sheetName = wb.SheetNames[0];
-    const ws = wb.Sheets[sheetName];
-
-    const grid = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
-    if (!grid.length) return { headers: [], rows: [] };
-
-    const headerCandidates = [
-      "player","nickname","name",
-      "total score","total","score","points",
-      "accuracy","accuracy %","correct","correct answers",
-      "speed bonus","speed","bonus",
-      "rank","position"
-    ];
-
-    let bestIdx = -1;
-    let bestCandidateHits = -1;
-    let bestNonEmpty = -1;
-
-    const scanLimit = Math.min(grid.length, 60);
-    for (let i = 0; i < scanLimit; i++){
-      const row = grid[i].map(c => String(c || "").trim());
-      const rowLower = row.map(c => c.toLowerCase());
-
-      const nonEmpty = rowLower.filter(Boolean).length;
-      if (nonEmpty < 2) continue;
-
-      let hits = 0;
-      for (const cell of rowLower){
-        for (const cand of headerCandidates){
-          if (cell.includes(cand)) hits++;
-        }
-      }
-
-      // primary: candidate hits, secondary: non-empty count
-      if (hits > bestCandidateHits || (hits === bestCandidateHits && nonEmpty > bestNonEmpty)){
-        bestCandidateHits = hits;
-        bestNonEmpty = nonEmpty;
-        bestIdx = i;
-      }
-    }
-
-    // If no candidate hits at all, fall back to the row with the most non-empty cells
-    if (bestCandidateHits <= 0){
-      bestIdx = -1;
-      bestNonEmpty = -1;
-      for (let i = 0; i < scanLimit; i++){
-        const nonEmpty = grid[i].map(c => String(c || "").trim()).filter(Boolean).length;
-        if (nonEmpty > bestNonEmpty){
-          bestNonEmpty = nonEmpty;
-          bestIdx = i;
-        }
-      }
-    }
-
-    if (bestIdx < 0) bestIdx = 0;
-
-    const headers = grid[bestIdx].map(h => String(h || "").trim()).filter(Boolean);
-    if (!headers.length) return { headers: [], rows: [] };
-
-    const rows = [];
-    for (let r = bestIdx + 1; r < grid.length; r++){
-      const row = grid[r];
-      if (!row || !row.some(v => String(v || "").trim() !== "")) continue;
-
-      const obj = {};
-      headers.forEach((h, idx) => obj[h] = (row[idx] !== undefined ? row[idx] : ""));
-      rows.push(obj);
-    }
-
-    return { headers, rows };
-  }
-
-  function computeBlendedScore(row, nameKey, totalKey, accKey, speedKey){
-    const name = String(row[nameKey] ?? '').trim();
-    if (!name) return null;
-
-    const total = totalKey ? toNumberSafe(row[totalKey]) : null;
-
-    let acc = accKey ? toNumberSafe(row[accKey]) : null;
-    if (acc !== null && acc > 0 && acc <= 1) acc = acc * 100;
-
-    const speed = speedKey ? toNumberSafe(row[speedKey]) : null;
-
-    let score = null;
-    let note = '';
-
-    if (acc !== null){
-      score = (acc * 10) + (speed !== null ? speed : 0);
-      note = `accuracy(${acc})×10 + speed_bonus(${speed !== null ? speed : 0})`;
-    } else if (total !== null){
-      score = total;
-      note = `total_score(${total})`;
-    } else {
-      return null;
-    }
-
-    return { name, score, note };
-  }
-
   // ========= State =========
-  let uploadedRows = [];
-  let uploadedHeaders = [];
-
   let roster = [];
   let tiers = { top: [], mid: [], bot: [], extra: [] };
   let teams = [];
 
-  // ========= Tiering =========
   function buildTiersFromRoster(){
     tiers = { top: [], mid: [], bot: [], extra: [] };
     const n = roster.length;
@@ -560,11 +447,10 @@ John Smith,12"></textarea>
     tiers.extra = roster.slice(topSize + midSize + botSize);
   }
 
-  // ========= Rendering =========
   function renderRoster(){
     if (!roster.length){
       summaryEl.textContent = 'No roster yet.';
-      rosterWrap.innerHTML = '<p class="muted">Choose a Kahoot XLSX or paste CSV, then click Assign Roles.</p>';
+      rosterWrap.innerHTML = '<p class="muted">Paste CSV and click Assign Roles.</p>';
       return;
     }
 
@@ -583,13 +469,12 @@ John Smith,12"></textarea>
         <td>${escapeHtml(s.name)}</td>
         <td>${Number.isFinite(s.score) ? s.score : ''}</td>
         <td>${escapeHtml(s.role || '')}</td>
-        <td class="muted">${escapeHtml(s.score_note || '')}</td>
       </tr>
     `).join('');
 
     rosterWrap.innerHTML = `
       <table>
-        <thead><tr><th>Name</th><th>Score</th><th>Role</th><th class="muted">Score source</th></tr></thead>
+        <thead><tr><th>Name</th><th>Score</th><th>Role</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
       <div class="muted">Showing first 200 students.</div>
@@ -641,102 +526,20 @@ John Smith,12"></textarea>
   }
 
   // ========= Actions =========
-  async function loadFile(file){
-    const ext = (file.name.split('.').pop() || '').toLowerCase();
-
-    if (ext === 'xlsx' || ext === 'xls'){
-      const parsed = await parseKahootXLSX(file);
-      uploadedHeaders = parsed.headers;
-      uploadedRows = parsed.rows;
-
-      fillMappingDropdowns(uploadedHeaders);
-
-      // Set default guesses (but allow override)
-      if (!colName.value) colName.value = autoPick(uploadedHeaders, ['player','nickname','name']);
-      if (!colTotal.value) colTotal.value = autoPick(uploadedHeaders, ['total score','total','score','points']);
-      if (!colAccuracy.value) colAccuracy.value = autoPick(uploadedHeaders, ['accuracy','correct']);
-      if (!colSpeed.value) colSpeed.value = autoPick(uploadedHeaders, ['speed bonus','speed','bonus']);
-
-      if (!uploadedHeaders.length){
-        setStatus(`XLSX read failed: no headers found. Try re-exporting from Kahoot.`, 'err');
-        return;
-      }
-
-      if (!uploadedRows.length){
-        setStatus(`XLSX loaded, headers found (${uploadedHeaders.length}), but 0 data rows. This usually means Kahoot has a summary sheet format.`, 'err');
-        return;
-      }
-
-      setStatus(`Loaded XLSX: ${file.name}. headers=${uploadedHeaders.length}, rows=${uploadedRows.length}. Click Assign Roles.`, 'ok');
-      return;
-    }
-
-    if (ext === 'csv'){
-      const text = await file.text();
-      csvInput.value = text;
-      setStatus(`Loaded CSV: ${file.name}. Click Assign Roles.`, 'ok');
-      return;
-    }
-
-    setStatus('Unsupported file type. Upload .xlsx/.xls or .csv', 'err');
-  }
-
   function assignRoles(){
-    let cleaned = [];
-    let uid = 1;
-
-    // Prefer XLSX if present
-    if (uploadedRows.length && uploadedHeaders.length){
-      const nameKey = colName.value || autoPick(uploadedHeaders, ['player','nickname','name']);
-      const totalKey = colTotal.value || autoPick(uploadedHeaders, ['total score','total','score','points']);
-      const accKey = colAccuracy.value || autoPick(uploadedHeaders, ['accuracy','correct']);
-      const speedKey = colSpeed.value || autoPick(uploadedHeaders, ['speed bonus','speed','bonus']);
-
-      if (!nameKey){
-        setStatus('Please pick the correct Name column (Player/Nickname/etc.).', 'err');
-        return;
-      }
-
-      for (const r of uploadedRows){
-        const out = computeBlendedScore(r, nameKey, totalKey, accKey, speedKey);
-        if (!out) continue;
-        cleaned.push({ __uid: uid++, name: out.name, score: out.score, role:'', score_note: out.note });
-      }
-
-      if (cleaned.length < 3){
-        setStatus('Not enough usable rows from Kahoot. Try selecting different score columns.', 'err');
-        return;
-      }
-
-      cleaned.sort((a,b) => (b.score - a.score) || a.name.localeCompare(b.name));
-      roster = cleaned;
-
-      buildTiersFromRoster();
-      tiers.top.forEach(s => s.role = 'Leader');
-      tiers.mid.forEach(s => s.role = 'Designer');
-      tiers.bot.forEach(s => s.role = 'Builder');
-      tiers.extra.forEach(s => s.role = 'Extra');
-
-      teams = [];
-      renderRoster();
-      renderTeams();
-
-      setStatus(`Assigned roles from Kahoot for ${roster.length} students.`, 'ok');
-      return;
-    }
-
-    // CSV fallback
     const { headers, data } = parseCSV(csvInput.value || '');
     if (!headers.includes('name') || !headers.includes('score')){
-      setStatus('CSV must include headers: name, score.', 'err');
+      setStatus('CSV must include headers: name, score (first row).', 'err');
       return;
     }
 
+    const cleaned = [];
+    let uid = 1;
     for (const d of data){
       const name = (d.name || '').trim();
       const score = toNumberSafe(d.score);
       if (!name || score === null) continue;
-      cleaned.push({ __uid: uid++, name, score, role:'', score_note:'csv(score)' });
+      cleaned.push({ __uid: uid++, name, score, role:'' });
     }
 
     if (cleaned.length < 3){
@@ -757,7 +560,8 @@ John Smith,12"></textarea>
     renderRoster();
     renderTeams();
 
-    setStatus(`Assigned roles from CSV for ${roster.length} students.`, 'ok');
+    const possibleTeams = Math.min(tiers.top.length, tiers.mid.length, tiers.bot.length);
+    setStatus(`Assigned roles for ${roster.length} students. Possible teams: ${possibleTeams}.`, 'ok');
   }
 
   function shuffleRoles(){
@@ -779,6 +583,7 @@ John Smith,12"></textarea>
     teams = [];
     renderRoster();
     renderTeams();
+
     setStatus('Shuffled within roles. Click Build Teams.', 'ok');
   }
 
@@ -824,15 +629,12 @@ John Smith,12"></textarea>
 
   function clearAll(){
     csvInput.value = '';
-    uploadedRows = [];
-    uploadedHeaders = [];
-    fillMappingDropdowns([]);
     roster = [];
     tiers = { top: [], mid: [], bot: [], extra: [] };
     teams = [];
     renderRoster();
     renderTeams();
-    setStatus('Cleared. Choose a Kahoot XLSX or paste CSV, then click Assign Roles.', 'warn');
+    setStatus('Cleared. Paste CSV and click Assign Roles.', 'warn');
   }
 
   function loadSample90(){
@@ -857,40 +659,7 @@ John Smith,12"></textarea>
   document.getElementById('clearAll').addEventListener('click', clearAll);
   document.getElementById('loadSample').addEventListener('click', loadSample90);
 
-  fileAny.addEventListener('change', async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try{
-      await loadFile(file);
-    } catch (err){
-      console.error(err);
-      setStatus('Could not read file. If XLSX, confirm it is a Kahoot report export.', 'err');
-    }
-  });
-
-  [colName, colTotal, colAccuracy, colSpeed].forEach(sel => {
-    sel.addEventListener('change', () => {
-      if (uploadedHeaders.length){
-        setStatus('Column mapping updated. Click Assign Roles to apply.', 'warn');
-      }
-    });
-  });
-
-  splitMode.addEventListener('change', () => {
-    if (!roster.length) return;
-    buildTiersFromRoster();
-    tiers.top.forEach(s => s.role = 'Leader');
-    tiers.mid.forEach(s => s.role = 'Designer');
-    tiers.bot.forEach(s => s.role = 'Builder');
-    tiers.extra.forEach(s => s.role = 'Extra');
-    teams = [];
-    renderRoster();
-    renderTeams();
-    setStatus('Split mode changed. Click Shuffle Roles (optional) then Build Teams.', 'warn');
-  });
-
-  // Initial
-  fillMappingDropdowns([]);
+  // initial
   renderRoster();
   renderTeams();
 </script>
