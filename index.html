@@ -176,6 +176,18 @@
       background:rgba(0,0,0,0.14);color:var(--muted);font-size:13px;
     }
 
+.hint-quote{
+  text-align: center;
+  font-weight: 800;
+  font-size: 16px;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  color: rgba(255,255,255,0.92);
+}
+@media (max-width: 480px){
+  .hint-quote{ font-size: 15px; }
+}
+
     @media print{
       body{background:white;color:#111;}
       .card{box-shadow:none;background:white;border:1px solid #ccc;}
@@ -247,9 +259,13 @@
         </div>
       </div>
 
-      <div class="hint">
-         “Great games need all three roles. Today is about testing ideas, not perfection.”
-      </div>
+     
+<div class="hint">
+  <div class="hint-quote">
+    “Great games need all three roles. Today is about testing ideas, not perfection.”
+  </div>
+</div>
+
     </div>
 
     <!-- Top row: Input (left) + Teams (right) -->
