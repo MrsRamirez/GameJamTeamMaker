@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Game Jam Team Shuffler (Leader / Designer / Builder)</title>
+  <title>Game Jam Team Shuffler (Kahoot XLSX Supported)</title>
+
+  <!-- SheetJS (XLSX parser) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
     :root{
@@ -53,7 +56,7 @@
     .container{max-width:1200px;margin:0 auto;padding:22px 18px 40px;}
     header{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;margin-bottom:14px;}
     h1{margin:0 0 8px;font-size:clamp(22px,3.2vw,34px);letter-spacing:-0.02em;line-height:1.05;}
-    .subtitle{margin-top:6px;color:var(--muted);font-size:14px;max-width:70ch;}
+    .subtitle{margin-top:6px;color:var(--muted);font-size:14px;max-width:80ch;}
     .badge{
       display:inline-flex;align-items:center;gap:8px;padding:8px 12px;
       border:1px solid var(--border);border-radius:999px;background:rgba(255,255,255,0.06);
@@ -79,7 +82,7 @@
     }
     textarea:focus{border-color:rgba(192,38,211,0.55);box-shadow:0 0 0 4px rgba(192,38,211,0.14);}
 
-    input[type="text"], input[type="number"], select{
+    input[type="text"], input[type="number"], select, input[type="file"]{
       border-radius:12px;border:1px solid var(--border);
       background:rgba(0,0,0,0.22);color:var(--text);
       padding:9px 10px;outline:none;min-height:38px;
@@ -175,23 +178,25 @@
       margin-top:10px;padding:10px 12px;border-radius:14px;border:1px dashed rgba(255,255,255,0.22);
       background:rgba(0,0,0,0.14);color:var(--muted);font-size:13px;
     }
+    .hint-quote{
+      text-align:center;font-weight:800;font-size:16px;line-height:1.35;letter-spacing:0.01em;
+      color:rgba(255,255,255,0.92);
+    }
 
-.hint-quote{
-  text-align: center;
-  font-weight: 800;
-  font-size: 16px;
-  line-height: 1.35;
-  letter-spacing: 0.01em;
-  color: rgba(255,255,255,0.92);
-}
-@media (max-width: 480px){
-  .hint-quote{ font-size: 15px; }
-}
+    .small-note{
+      margin-top:8px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.05);
+      color:var(--muted);
+      font-size:13px;
+    }
 
     @media print{
       body{background:white;color:#111;}
       .card{box-shadow:none;background:white;border:1px solid #ccc;}
-      button, input, select, textarea, .hint, .badge { display:none !important; }
+      button, input, select, textarea, .hint, .badge, .small-note { display:none !important; }
       th{position:static;}
     }
   </style>
@@ -203,7 +208,8 @@
       <div>
         <h1>Game Jam Team Shuffler</h1>
         <div class="subtitle">
-         Load and shuffle within roles, and generate teams of 3.
+          Supports <b>CSV</b> (<span class="mono">name,score</span>) and <b>Kahoot XLSX</b>.
+          Scores can be computed as: <b>score = (accuracy × 10) + speed_bonus</b> (fallback to Total Score if needed).
         </div>
       </div>
       <div class="badge">
@@ -259,40 +265,42 @@
         </div>
       </div>
 
-     
-<div class="hint">
-  <div class="hint-quote">
-    “Great games need all three roles. Today is about testing ideas, not perfection.”
-  </div>
-</div>
-
+      <div class="hint">
+        <div class="hint-quote">“Great games need all three roles. Today is about testing ideas, not perfection.”</div>
+      </div>
     </div>
 
     <!-- Top row: Input (left) + Teams (right) -->
     <div class="row">
       <div class="card">
-        <h2>1) Input (CSV)</h2>
+        <h2>1) Input (CSV or Kahoot XLSX)</h2>
 
         <div class="controls">
           <div>
-            <label for="csvFile"><b>Upload CSV:</b></label>
-            <input id="csvFile" type="file" accept=".csv,text/csv"/>
+            <label for="fileAny"><b>Upload:</b></label>
+            <input id="fileAny" type="file" accept=".csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"/>
           </div>
           <div>
-            <button class="secondary" id="loadSample">Load Sample (90)</button>
+            <button class="secondary" id="loadSample">Load Sample (90 CSV)</button>
             <button class="secondary" id="clearAll">Clear</button>
           </div>
         </div>
 
-        <p class="muted" style="margin:10px 0 6px;">
-          Required CSV headers: <span class="mono">name</span>, <span class="mono">score</span>.
-        </p>
+        <div class="small-note">
+          <b>Kahoot XLSX:</b> This tool attempts to auto-detect columns like <span class="mono">Player</span>/<span class="mono">Nickname</span>, <span class="mono">Total score</span>,
+          <span class="mono">Accuracy</span>, and <span class="mono">Speed bonus</span>. You can override with dropdowns if needed.
+        </div>
 
-        <textarea id="csvInput" placeholder="name,score
-Jane Doe,18
-John Smith,12"></textarea>
+        <div class="controls" style="margin-top:12px;">
+          <div>
+            <label><b>Source:</b></label>
+            <select id="inputMode">
+              <option value="auto">Auto (from upload)</option>
+              <option value="csv">CSV (paste below)</option>
+              <option value="kahoot">Kahoot XLSX</option>
+            </select>
+          </div>
 
-        <div class="controls">
           <div>
             <label><b>Split mode:</b></label>
             <select id="splitMode">
@@ -312,6 +320,34 @@ John Smith,12"></textarea>
           </div>
         </div>
 
+        <!-- Column mapping (for XLSX) -->
+        <div class="controls" style="margin-top:10px;">
+          <div>
+            <label><b>Name column:</b></label>
+            <select id="colName"><option value="">(auto)</option></select>
+          </div>
+          <div>
+            <label><b>Total score:</b></label>
+            <select id="colTotal"><option value="">(auto)</option></select>
+          </div>
+          <div>
+            <label><b>Accuracy:</b></label>
+            <select id="colAccuracy"><option value="">(auto)</option></select>
+          </div>
+          <div>
+            <label><b>Speed bonus:</b></label>
+            <select id="colSpeed"><option value="">(auto)</option></select>
+          </div>
+        </div>
+
+        <p class="muted" style="margin:10px 0 6px;">
+          If using CSV paste: required headers are <span class="mono">name</span>, <span class="mono">score</span>.
+        </p>
+
+        <textarea id="csvInput" placeholder="name,score
+Jane Doe,18
+John Smith,12"></textarea>
+
         <div class="controls">
           <button id="assignRolesBtn">Assign Roles</button>
           <button id="shuffleBtn">Shuffle Roles</button>
@@ -319,7 +355,7 @@ John Smith,12"></textarea>
         </div>
 
         <div class="status" id="status">
-          <span class="pill warn">Paste/upload CSV, then click Assign Roles.</span>
+          <span class="pill warn">Upload a Kahoot XLSX or paste CSV, then click Assign Roles.</span>
         </div>
       </div>
 
@@ -349,6 +385,9 @@ John Smith,12"></textarea>
   </div>
 
 <script>
+  // -----------------------------
+  // CSV parsing
+  // -----------------------------
   function parseCSV(text) {
     const rows = [];
     let row = [];
@@ -386,7 +425,15 @@ John Smith,12"></textarea>
   }
 
   function toNumberSafe(v){
-    const n = Number(String(v).trim());
+    if (v === null || v === undefined) return null;
+    const s = String(v).trim();
+    if (!s) return null;
+
+    // If it's a percent like "87%" or "87.5 %"
+    const pctMatch = s.match(/^(\d+(\.\d+)?)\s*%$/);
+    if (pctMatch) return Number(pctMatch[1]);
+
+    const n = Number(s);
     return Number.isFinite(n) ? n : null;
   }
 
@@ -396,6 +443,9 @@ John Smith,12"></textarea>
     }[m]));
   }
 
+  // -----------------------------
+  // Seeded RNG
+  // -----------------------------
   function seedToUint32(seedStr){
     if (!seedStr) return null;
     let h = 2166136261;
@@ -435,17 +485,116 @@ John Smith,12"></textarea>
     await navigator.clipboard.writeText(text);
   }
 
+  // -----------------------------
+  // Kahoot XLSX support
+  // -----------------------------
+  let uploadedRows = [];      // array of objects from XLSX (keys are header strings)
+  let uploadedHeaders = [];   // array of header strings
+
+  function normKey(s){
+    return String(s || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g,' ')
+      .replace(/[^\w %]/g,''); // keep letters/numbers/underscore/space/percent
+  }
+
+  function autoPick(headers, candidates){
+    // candidates = array of substrings that might appear in the normalized header
+    const normalized = headers.map(h => ({ raw:h, n:normKey(h) }));
+    for (const cand of candidates){
+      const c = cand.toLowerCase();
+      const found = normalized.find(h => h.n.includes(c));
+      if (found) return found.raw;
+    }
+    return '';
+  }
+
+  function fillMappingDropdowns(headers){
+    const selects = [
+      document.getElementById('colName'),
+      document.getElementById('colTotal'),
+      document.getElementById('colAccuracy'),
+      document.getElementById('colSpeed')
+    ];
+    for (const sel of selects){
+      const current = sel.value;
+      sel.innerHTML = `<option value="">(auto)</option>` + headers.map(h => `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join('');
+      sel.value = current && headers.includes(current) ? current : '';
+    }
+  }
+
+  async function parseKahootXLSX(file){
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const sheetName = wb.SheetNames[0];
+    const ws = wb.Sheets[sheetName];
+    const json = XLSX.utils.sheet_to_json(ws, { defval: '' }); // headers inferred from first row
+    if (!json.length) return { headers: [], rows: [] };
+
+    const headers = Object.keys(json[0]);
+    return { headers, rows: json };
+  }
+
+  function computeBlendedScore(row, nameKey, totalKey, accKey, speedKey){
+    const name = String(row[nameKey] ?? '').trim();
+    if (!name) return null;
+
+    const total = totalKey ? toNumberSafe(row[totalKey]) : null;
+    const accRaw = accKey ? row[accKey] : null;
+    const speedRaw = speedKey ? row[speedKey] : null;
+
+    // Accuracy may be "87%" or "87.5" or "0.875"
+    let acc = toNumberSafe(accRaw);
+    if (acc !== null){
+      // if it's 0..1, treat as fraction and convert to percent
+      if (acc > 0 && acc <= 1) acc = acc * 100;
+    }
+
+    const speed = toNumberSafe(speedRaw);
+
+    // Requested formula: score = accuracy * 10 + speed_bonus
+    // If acc exists, use it. If missing, fall back to total score (Kahoot's computed).
+    // If speed missing, treat as 0.
+    let score = null;
+    if (acc !== null){
+      score = (acc * 10) + (speed !== null ? speed : 0);
+    } else if (total !== null){
+      score = total;
+    }
+
+    if (score === null) return null;
+
+    return {
+      name,
+      score,
+      source_total: total,
+      source_accuracy: acc,
+      source_speed_bonus: speed !== null ? speed : null
+    };
+  }
+
+  // -----------------------------
   // State
+  // -----------------------------
   let roster = [];
   let tiers = { top: [], mid: [], bot: [], extra: [] };
   let teams = [];
 
+  // -----------------------------
   // DOM
-  const csvFile = document.getElementById('csvFile');
+  // -----------------------------
+  const fileAny = document.getElementById('fileAny');
   const csvInput = document.getElementById('csvInput');
+  const inputMode = document.getElementById('inputMode');
   const splitMode = document.getElementById('splitMode');
   const seedInput = document.getElementById('seedInput');
   const maxTeamsInput = document.getElementById('maxTeams');
+
+  const colName = document.getElementById('colName');
+  const colTotal = document.getElementById('colTotal');
+  const colAccuracy = document.getElementById('colAccuracy');
+  const colSpeed = document.getElementById('colSpeed');
 
   const statusEl = document.getElementById('status');
   const summaryEl = document.getElementById('summary');
@@ -458,13 +607,14 @@ John Smith,12"></textarea>
     statusEl.innerHTML = `<span class="pill ${cls}">${escapeHtml(msg)}</span>`;
   }
 
+  // -----------------------------
+  // Tiering
+  // -----------------------------
   function buildTiersFromRoster(){
     tiers = { top: [], mid: [], bot: [], extra: [] };
     const mode = splitMode.value;
     const n = roster.length;
 
-    // We still sort by score internally to create balanced teams,
-    // but the UI language avoids "ranking" terminology.
     if (mode === 'fixed30'){
       tiers.top = roster.slice(0, 30);   // Leaders
       tiers.mid = roster.slice(30, 60);  // Designers
@@ -485,10 +635,13 @@ John Smith,12"></textarea>
     tiers.extra = roster.slice(topSize + midSize + botSize);
   }
 
+  // -----------------------------
+  // Rendering
+  // -----------------------------
   function renderRoster(){
     if (!roster.length){
       summaryEl.textContent = 'No roster yet.';
-      rosterWrap.innerHTML = '<p class="muted">Paste or upload CSV and click Assign Roles.</p>';
+      rosterWrap.innerHTML = '<p class="muted">Upload Kahoot XLSX or paste CSV, then click Assign Roles.</p>';
       return;
     }
 
@@ -505,14 +658,15 @@ John Smith,12"></textarea>
     const rows = roster.slice(0, 200).map(s => `
       <tr>
         <td>${escapeHtml(s.name)}</td>
-        <td>${s.score}</td>
+        <td>${Number.isFinite(s.score) ? s.score : ''}</td>
         <td>${escapeHtml(s.role || '')}</td>
+        <td class="muted">${escapeHtml(s.score_note || '')}</td>
       </tr>
     `).join('');
 
     rosterWrap.innerHTML = `
       <table>
-        <thead><tr><th>Name</th><th>Score</th><th>Role</th></tr></thead>
+        <thead><tr><th>Name</th><th>Score</th><th>Role</th><th class="muted">Score source</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
       <div class="muted">Showing first 200 students.</div>
@@ -563,27 +717,120 @@ John Smith,12"></textarea>
     }
   }
 
-  async function loadFileToTextarea(file){
+  // -----------------------------
+  // Input handling
+  // -----------------------------
+  async function handleUpload(file){
+    if (!file) return;
+
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    const mode = inputMode.value;
+
+    if (ext === 'xlsx' || ext === 'xls' || mode === 'kahoot'){
+      const parsed = await parseKahootXLSX(file);
+      uploadedHeaders = parsed.headers;
+      uploadedRows = parsed.rows;
+
+      fillMappingDropdowns(uploadedHeaders);
+
+      // Auto-pick likely columns
+      const autoName = autoPick(uploadedHeaders, ['player', 'nickname', 'name']);
+      const autoTotal = autoPick(uploadedHeaders, ['total score', 'total', 'score']);
+      const autoAcc = autoPick(uploadedHeaders, ['accuracy', 'accuracy %', 'accuracy percentage', 'correct']);
+      const autoSpeed = autoPick(uploadedHeaders, ['speed bonus', 'speed', 'bonus']);
+
+      // Only set dropdowns if user hasn't chosen something
+      if (!colName.value) colName.value = autoName;
+      if (!colTotal.value) colTotal.value = autoTotal;
+      if (!colAccuracy.value) colAccuracy.value = autoAcc;
+      if (!colSpeed.value) colSpeed.value = autoSpeed;
+
+      setStatus(`Loaded XLSX: ${file.name}. Click Assign Roles.`, 'warn');
+      return;
+    }
+
+    // CSV
     const text = await file.text();
     csvInput.value = text;
-    setStatus(`Loaded ${file.name}. Click Assign Roles.`, 'warn');
+    setStatus(`Loaded CSV: ${file.name}. Click Assign Roles.`, 'warn');
   }
 
   function assignRoles(){
-    const { headers, data } = parseCSV(csvInput.value || '');
+    // Decide source
+    const mode = inputMode.value;
+    const hasXlsx = uploadedRows.length > 0;
 
+    let cleaned = [];
+    let uid = 1;
+
+    if ((mode === 'kahoot') || (mode === 'auto' && hasXlsx)){
+      // Kahoot XLSX path
+      const nameKey = colName.value || autoPick(uploadedHeaders, ['player','nickname','name']);
+      const totalKey = colTotal.value || autoPick(uploadedHeaders, ['total score','total','score']);
+      const accKey = colAccuracy.value || autoPick(uploadedHeaders, ['accuracy','accuracy %','correct']);
+      const speedKey = colSpeed.value || autoPick(uploadedHeaders, ['speed bonus','speed','bonus']);
+
+      if (!nameKey){
+        setStatus('XLSX: Could not identify the Player Name column. Choose it from the Name column dropdown.', 'err');
+        return;
+      }
+
+      for (const r of uploadedRows){
+        const out = computeBlendedScore(r, nameKey, totalKey, accKey, speedKey);
+        if (!out) continue;
+
+        // helpful note for teacher view only
+        let note = '';
+        if (out.source_accuracy !== null){
+          note = `accuracy(${out.source_accuracy})×10 + speed_bonus(${out.source_speed_bonus ?? 0})`;
+        } else {
+          note = `total_score(${out.source_total ?? ''})`;
+        }
+
+        cleaned.push({
+          __uid: uid++,
+          name: out.name,
+          score: out.score,
+          role: '',
+          score_note: note
+        });
+      }
+
+      if (cleaned.length < 3){
+        setStatus('XLSX: Not enough valid rows. Confirm the correct columns are selected.', 'err');
+        return;
+      }
+
+      cleaned.sort((a,b) => (b.score - a.score) || a.name.localeCompare(b.name));
+      roster = cleaned;
+
+      buildTiersFromRoster();
+      tiers.top.forEach(s => s.role = 'Leader');
+      tiers.mid.forEach(s => s.role = 'Designer');
+      tiers.bot.forEach(s => s.role = 'Builder');
+      tiers.extra.forEach(s => s.role = 'Extra');
+
+      teams = [];
+      renderRoster();
+      renderTeams();
+
+      const possibleTeams = Math.min(tiers.top.length, tiers.mid.length, tiers.bot.length);
+      setStatus(`Assigned roles from Kahoot XLSX for ${roster.length} students. Possible teams: ${possibleTeams}.`, 'ok');
+      return;
+    }
+
+    // CSV path
+    const { headers, data } = parseCSV(csvInput.value || '');
     if (!headers.includes('name') || !headers.includes('score')){
       setStatus('CSV must include headers: name, score.', 'err');
       return;
     }
 
-    const cleaned = [];
-    let uid = 1;
     for (const d of data){
       const name = (d.name || '').trim();
       const score = toNumberSafe(d.score);
       if (!name || score === null) continue;
-      cleaned.push({ __uid: uid++, name, score, role: '' });
+      cleaned.push({ __uid: uid++, name, score, role: '', score_note: 'csv(score)' });
     }
 
     if (cleaned.length < 3){
@@ -591,12 +838,10 @@ John Smith,12"></textarea>
       return;
     }
 
-    // Internal ordering for balanced role distribution (not shown as “rank”)
     cleaned.sort((a,b) => (b.score - a.score) || a.name.localeCompare(b.name));
     roster = cleaned;
 
     buildTiersFromRoster();
-
     tiers.top.forEach(s => s.role = 'Leader');
     tiers.mid.forEach(s => s.role = 'Designer');
     tiers.bot.forEach(s => s.role = 'Builder');
@@ -606,139 +851,4 @@ John Smith,12"></textarea>
     renderRoster();
     renderTeams();
 
-    const possibleTeams = Math.min(tiers.top.length, tiers.mid.length, tiers.bot.length);
-    setStatus(`Assigned roles for ${roster.length} students. Possible teams: ${possibleTeams}.`, 'ok');
-  }
-
-  function shuffleRoles(){
-    if (!roster.length){ setStatus('Assign roles first.', 'warn'); return; }
-
-    buildTiersFromRoster();
-    const seed = seedToUint32(seedInput.value.trim());
-    const rng = seed === null ? Math.random : mulberry32(seed);
-
-    shuffleInPlace(tiers.top, rng);
-    shuffleInPlace(tiers.mid, rng);
-    shuffleInPlace(tiers.bot, rng);
-
-    tiers.top.forEach(s => s.role = 'Leader');
-    tiers.mid.forEach(s => s.role = 'Designer');
-    tiers.bot.forEach(s => s.role = 'Builder');
-    tiers.extra.forEach(s => s.role = 'Extra');
-
-    teams = [];
-    renderRoster();
-    renderTeams();
-
-    setStatus('Shuffled within roles. Click Build Teams.', 'ok');
-  }
-
-  function buildTeams(){
-    if (!roster.length){ setStatus('Assign roles first.', 'warn'); return; }
-
-    const possibleTeams = Math.min(tiers.top.length, tiers.mid.length, tiers.bot.length);
-    const maxTeams = Math.max(1, Math.min(Number(maxTeamsInput.value || 30), 60));
-    const teamCount = Math.min(possibleTeams, maxTeams);
-
-    if (teamCount < 1){
-      setStatus('Not enough students in roles to form teams.', 'err');
-      teams = [];
-      renderTeams();
-      return;
-    }
-
-    teams = [];
-    for (let i=0; i<teamCount; i++){
-      teams.push({
-        team: i + 1,
-        leader: tiers.top[i],
-        designer: tiers.mid[i],
-        builder: tiers.bot[i]
-      });
-    }
-
-    renderTeams();
-    setStatus(`Built ${teams.length} teams.`, 'ok');
-  }
-
-  function exportTeamsCSV(){
-    if (!teams.length){ setStatus('Build teams first.', 'warn'); return; }
-    const lines = [];
-    lines.push('team,leader,designer,builder');
-    for (const t of teams){
-      lines.push([t.team, csvCell(t.leader.name), csvCell(t.designer.name), csvCell(t.builder.name)].join(','));
-    }
-    downloadText('gamejam_teams.csv', lines.join('\n'));
-    setStatus('Exported teams CSV.', 'ok');
-  }
-
-  function csvCell(v){
-    const s = String(v ?? '');
-    if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-    return s;
-  }
-
-  async function copyTeams(){
-    if (!teams.length){ setStatus('Build teams first.', 'warn'); return; }
-    const text = teams.map(t => `Team ${t.team}: ${t.leader.name} | ${t.designer.name} | ${t.builder.name}`).join('\n');
-    try{ await copyToClipboard(text); setStatus('Copied teams to clipboard.', 'ok'); }
-    catch { setStatus('Could not copy (browser permission). Try Export Teams CSV.', 'warn'); }
-  }
-
-  function clearAll(){
-    csvInput.value = '';
-    roster = [];
-    tiers = { top: [], mid: [], bot: [], extra: [] };
-    teams = [];
-    renderRoster();
-    renderTeams();
-    setStatus('Cleared. Paste/upload CSV, then click Assign Roles.', 'warn');
-  }
-
-  function loadSample90(){
-    const lines = ['name,score'];
-    const first = ["Aaliyah","Brandon","Carlos","Dina","Evan","Fatima","Gabe","Hana","Imani","Jaden","Kiara","Luis","Maya","Nina","Omar","Priya","Quentin","Rosa","Sam","Tariq"];
-    const last  = ["Johnson","Smith","Garcia","Martinez","Lee","Brown","Williams","Davis","Rodriguez","Wilson"];
-    for (let i=1; i<=90; i++){
-      const name = `${first[i % first.length]} ${last[(i * 3) % last.length]}`;
-      const score = 5 + ((i * 7) % 16);
-      lines.push(`${name},${score}`);
-    }
-    csvInput.value = lines.join('\n');
-    setStatus('Sample (90) loaded. Click Assign Roles.', 'warn');
-  }
-
-  // Wire up
-  document.getElementById('assignRolesBtn').addEventListener('click', assignRoles);
-  document.getElementById('shuffleBtn').addEventListener('click', shuffleRoles);
-  document.getElementById('makeTeamsBtn').addEventListener('click', buildTeams);
-  document.getElementById('exportCsvBtn').addEventListener('click', exportTeamsCSV);
-  document.getElementById('copyTeamsBtn').addEventListener('click', copyTeams);
-  document.getElementById('printBtn').addEventListener('click', () => window.print());
-  document.getElementById('clearAll').addEventListener('click', clearAll);
-  document.getElementById('loadSample').addEventListener('click', loadSample90);
-
-  csvFile.addEventListener('change', (e) => {
-    const file = e.target.files?.[0];
-    if (file) loadFileToTextarea(file);
-  });
-
-  splitMode.addEventListener('change', () => {
-    if (!roster.length) return;
-    buildTiersFromRoster();
-    tiers.top.forEach(s => s.role = 'Leader');
-    tiers.mid.forEach(s => s.role = 'Designer');
-    tiers.bot.forEach(s => s.role = 'Builder');
-    tiers.extra.forEach(s => s.role = 'Extra');
-    teams = [];
-    renderRoster();
-    renderTeams();
-    setStatus('Split mode changed. Click Shuffle Roles (optional) then Build Teams.', 'warn');
-  });
-
-  // Initial
-  renderRoster();
-  renderTeams();
-</script>
-</body>
-</html>
+    const possibleTeams = Math.min(tiers.top.length, tiers.mid.l
