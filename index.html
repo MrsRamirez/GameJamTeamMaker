@@ -18,13 +18,26 @@
       --text: rgba(255,255,255,0.92);
       --muted: rgba(255,255,255,0.72);
 
-      --accent: #c026d3; /* fuchsia */
-      --accent-2: #7c3aed; /* purple */
-      --accent-3: #fb7185; /* rose-ish highlight */
+      --accent: #c026d3;    /* fuchsia */
+      --accent-2: #7c3aed;  /* purple */
+      --accent-3: #fb7185;  /* rose-ish */
       --good: rgba(34,197,94,0.18);
       --warn: rgba(245,158,11,0.18);
       --err: rgba(239,68,68,0.18);
       --shadow: 0 12px 30px rgba(0,0,0,0.35);
+
+      /* Role tones (blue/yellow/green) that play nicely with purple/fuchsia */
+      --role-blue-bg: rgba(59,130,246,0.16);
+      --role-blue-br: rgba(59,130,246,0.32);
+      --role-blue-ac: rgba(147,197,253,0.95);
+
+      --role-yellow-bg: rgba(245,158,11,0.16);
+      --role-yellow-br: rgba(245,158,11,0.34);
+      --role-yellow-ac: rgba(253,230,138,0.95);
+
+      --role-green-bg: rgba(34,197,94,0.16);
+      --role-green-br: rgba(34,197,94,0.32);
+      --role-green-ac: rgba(187,247,208,0.95);
     }
 
     * { box-sizing: border-box; }
@@ -56,7 +69,7 @@
     }
 
     h1{
-      margin: 0;
+      margin: 0 0 8px;
       font-size: clamp(22px, 3.2vw, 34px);
       letter-spacing: -0.02em;
       line-height: 1.05;
@@ -82,7 +95,6 @@
       color: var(--muted);
       white-space: nowrap;
     }
-
     .badge b{ color: var(--text); font-weight: 650; }
 
     .row{
@@ -233,25 +245,66 @@
     @media (max-width: 980px){
       .role-grid{ grid-template-columns: 1fr; }
     }
+
     .role-card{
       border-radius: 16px;
       border: 1px solid var(--border);
-      background: var(--card-2);
       padding: 12px;
       box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      background: var(--card-2);
     }
+    .role-card::before{
+      content:"";
+      position:absolute;
+      inset: -2px -2px auto -2px;
+      height: 56px;
+      opacity: 0.45;
+      filter: blur(10px);
+      pointer-events: none;
+    }
+
+    /* Role-specific styling */
+    .role-card.leader{
+      background: linear-gradient(180deg, var(--role-blue-bg), rgba(255,255,255,0.07));
+      border-color: var(--role-blue-br);
+    }
+    .role-card.leader::before{
+      background: radial-gradient(500px 80px at 30% 20%, rgba(59,130,246,0.55), transparent 60%);
+    }
+
+    .role-card.designer{
+      background: linear-gradient(180deg, var(--role-yellow-bg), rgba(255,255,255,0.07));
+      border-color: var(--role-yellow-br);
+    }
+    .role-card.designer::before{
+      background: radial-gradient(500px 80px at 30% 20%, rgba(245,158,11,0.55), transparent 60%);
+    }
+
+    .role-card.builder{
+      background: linear-gradient(180deg, var(--role-green-bg), rgba(255,255,255,0.07));
+      border-color: var(--role-green-br);
+    }
+    .role-card.builder::before{
+      background: radial-gradient(500px 80px at 30% 20%, rgba(34,197,94,0.55), transparent 60%);
+    }
+
     .role-title{
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
       margin-bottom: 6px;
+      position: relative;
+      z-index: 1;
     }
     .role-title h3{
       margin: 0;
       font-size: 14px;
       letter-spacing: -0.01em;
     }
+
     .tag{
       padding: 3px 10px;
       border-radius: 999px;
@@ -260,16 +313,26 @@
       background: rgba(0,0,0,0.15);
       color: rgba(255,255,255,0.84);
       white-space: nowrap;
+      position: relative;
+      z-index: 1;
     }
+    .tag.leader{ border-color: var(--role-blue-br); color: var(--role-blue-ac); }
+    .tag.designer{ border-color: var(--role-yellow-br); color: var(--role-yellow-ac); }
+    .tag.builder{ border-color: var(--role-green-br); color: var(--role-green-ac); }
+
     .role-card ul{
       margin: 8px 0 0 18px;
-      color: rgba(255,255,255,0.85);
+      color: rgba(255,255,255,0.88);
       font-size: 13px;
+      position: relative;
+      z-index: 1;
     }
     .role-card p{
       margin: 8px 0 0;
       color: var(--muted);
       font-size: 13px;
+      position: relative;
+      z-index: 1;
     }
 
     .hint{
@@ -309,16 +372,16 @@
     </header>
 
     <div class="card">
-      <h2>Student-Facing Role Descriptions</h2>
+      <h2>Role Descriptions</h2>
       <div class="muted">
-        These labels are designed to reduce self-consciousness and emphasize that every role matters in game-making.
+        These labels emphasize contribution (not ranking). Every role matters in game-making.
       </div>
 
       <div class="role-grid">
-        <div class="role-card">
+        <div class="role-card leader">
           <div class="role-title">
             <h3>Leader</h3>
-            <span class="tag">Guides the team</span>
+            <span class="tag leader">Guides the team</span>
           </div>
           <ul>
             <li>Keep the team moving and on time</li>
@@ -328,10 +391,10 @@
           <p><b>Leaders do not</b> need to be the best coder or speaker.</p>
         </div>
 
-        <div class="role-card">
+        <div class="role-card designer">
           <div class="role-title">
             <h3>Designer</h3>
-            <span class="tag">Shapes the experience</span>
+            <span class="tag designer">Shapes the experience</span>
           </div>
           <ul>
             <li>Think about the player’s experience</li>
@@ -341,10 +404,10 @@
           <p><b>Designers do not</b> need to be “good at art.”</p>
         </div>
 
-        <div class="role-card">
+        <div class="role-card builder">
           <div class="role-title">
             <h3>Builder</h3>
-            <span class="tag">Makes it playable</span>
+            <span class="tag builder">Makes it playable</span>
           </div>
           <ul>
             <li>Help turn ideas into a playable prototype</li>
@@ -360,6 +423,7 @@
       </div>
     </div>
 
+    <!-- Top row: Input (left) + Teams (right) -->
     <div class="row">
       <div class="card">
         <h2>1) Input (CSV)</h2>
@@ -416,26 +480,27 @@ John Smith,12,987654321,11"></textarea>
       </div>
 
       <div class="card">
-        <h2>2) Roster (Ranked)</h2>
-        <div id="summary" class="muted">No roster yet.</div>
-        <div id="rosterWrap"></div>
+        <h2>2) Teams</h2>
+        <div class="muted">
+          Teams generated as: <b>Leader + Designer + Builder</b> (after Shuffle). Extras remain unassigned.
+        </div>
+
+        <div class="controls" style="margin-top:10px;">
+          <button id="exportCsvBtn">Export Teams CSV</button>
+          <button id="copyTeamsBtn" class="secondary">Copy Teams</button>
+          <button id="printBtn" class="secondary">Print</button>
+        </div>
+
+        <div id="teamsWrap"></div>
+        <div id="extrasWrap" style="margin-top:10px;"></div>
       </div>
     </div>
 
+    <!-- Bottom: Roster full width -->
     <div class="card" style="margin-top:16px;">
-      <h2>3) Teams</h2>
-      <div class="muted">
-        Teams generated as: <b>Leader + Designer + Builder</b> (after Shuffle). Extras remain unassigned.
-      </div>
-
-      <div class="controls" style="margin-top:10px;">
-        <button id="exportCsvBtn">Export Teams CSV</button>
-        <button id="copyTeamsBtn" class="secondary">Copy Teams</button>
-        <button id="printBtn" class="secondary">Print</button>
-      </div>
-
-      <div id="teamsWrap"></div>
-      <div id="extrasWrap" style="margin-top:10px;"></div>
+      <h2>Roster (Ranked)</h2>
+      <div id="summary" class="muted">No roster yet.</div>
+      <div id="rosterWrap"></div>
     </div>
 
   </div>
@@ -550,8 +615,8 @@ John Smith,12,987654321,11"></textarea>
   // ---------------------------
   // State
   // ---------------------------
-  let roster = []; // ranked full roster
-  let tiers = { top: [], mid: [], bot: [], extra: [] }; // internal tiers
+  let roster = [];
+  let tiers = { top: [], mid: [], bot: [], extra: [] };
   let teams = [];
 
   // ---------------------------
@@ -562,6 +627,7 @@ John Smith,12,987654321,11"></textarea>
   const splitMode = document.getElementById('splitMode');
   const seedInput = document.getElementById('seedInput');
   const maxTeamsInput = document.getElementById('maxTeams');
+
   const statusEl = document.getElementById('status');
   const summaryEl = document.getElementById('summary');
   const rosterWrap = document.getElementById('rosterWrap');
@@ -582,14 +648,13 @@ John Smith,12,987654321,11"></textarea>
     const n = roster.length;
 
     if (mode === 'fixed30') {
-      tiers.top = roster.slice(0, 30);
-      tiers.mid = roster.slice(30, 60);
-      tiers.bot = roster.slice(60, 90);
+      tiers.top = roster.slice(0, 30);    // Leaders
+      tiers.mid = roster.slice(30, 60);   // Designers
+      tiers.bot = roster.slice(60, 90);   // Builders
       tiers.extra = roster.slice(90);
       return;
     }
 
-    // Automatic thirds as equal as possible
     const base = Math.floor(n / 3);
     const remainder = n - base * 3;
 
@@ -641,7 +706,7 @@ John Smith,12,987654321,11"></textarea>
       Possible teams: <b>${possibleTeams}</b>
     `;
 
-    const rows = roster.slice(0, 120).map(s => `
+    const rows = roster.slice(0, 200).map(s => `
       <tr>
         <td>${s.rank}</td>
         <td>${escapeHtml(s.name)}</td>
@@ -659,7 +724,7 @@ John Smith,12,987654321,11"></textarea>
         </thead>
         <tbody>${rows}</tbody>
       </table>
-      <div class="muted">Showing first 120 ranked students.</div>
+      <div class="muted">Showing first 200 ranked students.</div>
     `;
   }
 
