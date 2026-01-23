@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Game Jam Team Shuffler (Top / Middle / Bottom)</title>
+  <title>Game Jam Team Shuffler (Leader / Builder / Designer)</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.35; }
     h1 { margin: 0 0 8px; }
     .muted { color:#666; font-size: 13px; }
-    .row { display:flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; }
+    .row { display:flex; gap: 16px; flex-wrap: wrap; margin-Leader: 14px; }
     .card { border: 1px solid #ccc; border-radius: 12px; padding: 14px; flex: 1; min-width: 340px; }
     textarea { width: 100%; height: 170px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
     button { padding: 8px 12px; margin: 6px 6px 0 0; cursor:pointer; }
     input[type="text"], input[type="number"], select { padding: 6px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-Leader: 10px; }
     th, td { border: 1px solid #ddd; padding: 6px; font-size: 13px; }
     th { background:#f5f5f5; text-align:left; }
     .pill { display:inline-block; padding: 2px 8px; border-radius: 999px; background:#eee; font-size: 12px; }
@@ -30,8 +30,8 @@
 <body>
   <h1>Game Jam Team Shuffler</h1>
   <div class="muted">
-    Load student names + scores, rank them, split into Top/Middle/Bottom, shuffle, and build teams of 3:
-    <strong>Top + Middle + Bottom</strong>. Works offline. Data stays on your computer.
+    Load student names + scores, rank them, split into Leader/Builder/Designer, shuffle, and build teams of 3:
+    <strong>Leader + Builder + Designer</strong>. Works offline. Data stays on your computer.
   </div>
 
   <div class="row">
@@ -58,7 +58,7 @@
 Jane Doe,18,123456789,10
 John Smith,12,987654321,11"></textarea>
 
-      <div class="grid2" style="margin-top:10px;">
+      <div class="grid2" style="margin-Leader:10px;">
         <div class="controls">
           <div>
             <label><strong>Split mode:</strong></label>
@@ -86,11 +86,11 @@ John Smith,12,987654321,11"></textarea>
         </div>
       </div>
 
-      <div id="status" style="margin-top:10px;">
+      <div id="status" style="margin-Leader:10px;">
         <span class="pill warn">Paste/upload CSV, then click Rank.</span>
       </div>
 
-      <div class="muted" style="margin-top:10px;">
+      <div class="muted" style="margin-Leader:10px;">
         Tip: If you want reproducible teams, set a seed (e.g., <span class="mono">March6_2026</span>), then Shuffle, then Make Teams.
       </div>
     </div>
@@ -102,21 +102,21 @@ John Smith,12,987654321,11"></textarea>
     </div>
   </div>
 
-  <div class="card" style="margin-top:16px;">
+  <div class="card" style="margin-Leader:16px;">
     <h2 style="margin:0 0 8px;">3) Teams</h2>
     <div class="muted">
-      Teams generated as: <strong>Top[i] + Middle[i] + Bottom[i]</strong> (after shuffle).
+      Teams generated as: <strong>Leader[i] + Builder[i] + Designer[i]</strong> (after shuffle).
       Extras remain unassigned.
     </div>
 
-    <div class="controls" style="margin-top:10px;">
+    <div class="controls" style="margin-Leader:10px;">
       <button id="exportCsvBtn">Export Teams CSV</button>
       <button id="copyTeamsBtn">Copy Teams</button>
       <button id="printBtn">Print</button>
     </div>
 
     <div id="teamsWrap"></div>
-    <div id="extrasWrap" style="margin-top:10px;"></div>
+    <div id="extrasWrap" style="margin-Leader:10px;"></div>
   </div>
 
 <script>
@@ -233,7 +233,7 @@ John Smith,12,987654321,11"></textarea>
   // State
   // ---------------------------
   let roster = []; // ranked full roster
-  let tiers = { top: [], mid: [], bot: [], extra: [] }; // tier arrays (objects)
+  let tiers = { Leader: [], mid: [], bot: [], extra: [] }; // tier arrays (objects)
   let teams = []; // output teams
 
   // ---------------------------
@@ -260,13 +260,13 @@ John Smith,12,987654321,11"></textarea>
   // Tiering logic
   // ---------------------------
   function buildTiersFromRoster() {
-    tiers = { top: [], mid: [], bot: [], extra: [] };
+    tiers = { Leader: [], mid: [], bot: [], extra: [] };
 
     const mode = splitMode.value;
     const n = roster.length;
 
     if (mode === 'fixed30') {
-      tiers.top = roster.slice(0, 30);
+      tiers.Leader = roster.slice(0, 30);
       tiers.mid = roster.slice(30, 60);
       tiers.bot = roster.slice(60, 90);
       tiers.extra = roster.slice(90);
@@ -277,20 +277,20 @@ John Smith,12,987654321,11"></textarea>
     const base = Math.floor(n / 3);
     const remainder = n - base * 3;
 
-    const topSize = base + (remainder >= 1 ? 1 : 0);
+    const LeaderSize = base + (remainder >= 1 ? 1 : 0);
     const midSize = base + (remainder >= 2 ? 1 : 0);
     const botSize = base;
 
-    tiers.top = roster.slice(0, topSize);
-    tiers.mid = roster.slice(topSize, topSize + midSize);
-    tiers.bot = roster.slice(topSize + midSize, topSize + midSize + botSize);
-    tiers.extra = roster.slice(topSize + midSize + botSize);
+    tiers.Leader = roster.slice(0, LeaderSize);
+    tiers.mid = roster.slice(LeaderSize, LeaderSize + midSize);
+    tiers.bot = roster.slice(LeaderSize + midSize, LeaderSize + midSize + botSize);
+    tiers.extra = roster.slice(LeaderSize + midSize + botSize);
   }
 
   function annotateTierForDisplay() {
     // Build identity keys; prefer id if present
     const key = (s) => s.id ? `id:${s.id}` : `name:${s.name}|score:${s.score}|rank:${s.rank}`;
-    const topSet = new Set(tiers.top.map(key));
+    const LeaderSet = new Set(tiers.Leader.map(key));
     const midSet = new Set(tiers.mid.map(key));
     const botSet = new Set(tiers.bot.map(key));
     const extraSet = new Set(tiers.extra.map(key));
@@ -298,9 +298,9 @@ John Smith,12,987654321,11"></textarea>
     roster = roster.map(s => {
       const k = key(s);
       let tier = '';
-      if (topSet.has(k)) tier = 'TOP';
-      else if (midSet.has(k)) tier = 'MIDDLE';
-      else if (botSet.has(k)) tier = 'BOTTOM';
+      if (LeaderSet.has(k)) tier = 'Leader';
+      else if (midSet.has(k)) tier = 'Builder';
+      else if (botSet.has(k)) tier = 'Designer';
       else if (extraSet.has(k)) tier = 'EXTRA';
       return { ...s, tier };
     });
@@ -316,12 +316,12 @@ John Smith,12,987654321,11"></textarea>
       return;
     }
 
-    const possibleTeams = Math.min(tiers.top.length, tiers.mid.length, tiers.bot.length);
+    const possibleTeams = Math.min(tiers.Leader.length, tiers.mid.length, tiers.bot.length);
     summaryEl.innerHTML = `
       Students ranked: <strong>${roster.length}</strong> |
-      Top: <strong>${tiers.top.length}</strong>,
-      Middle: <strong>${tiers.mid.length}</strong>,
-      Bottom: <strong>${tiers.bot.length}</strong>,
+      Leader: <strong>${tiers.Leader.length}</strong>,
+      Builder: <strong>${tiers.mid.length}</strong>,
+      Designer: <strong>${tiers.bot.length}</strong>,
       Extra: <strong>${tiers.extra.length}</strong> |
       Possible teams: <strong>${possibleTeams}</strong>
     `;
@@ -358,7 +358,7 @@ John Smith,12,987654321,11"></textarea>
     const rows = teams.map(t => `
       <tr>
         <td>${t.team}</td>
-        <td>${escapeHtml(t.top.name)} <span class="pill">${escapeHtml(t.top.grade || '')}</span></td>
+        <td>${escapeHtml(t.Leader.name)} <span class="pill">${escapeHtml(t.Leader.grade || '')}</span></td>
         <td>${escapeHtml(t.mid.name)} <span class="pill">${escapeHtml(t.mid.grade || '')}</span></td>
         <td>${escapeHtml(t.bot.name)} <span class="pill">${escapeHtml(t.bot.grade || '')}</span></td>
       </tr>
@@ -366,7 +366,7 @@ John Smith,12,987654321,11"></textarea>
 
     teamsWrap.innerHTML = `
       <table>
-        <thead><tr><th>Team</th><th>Top</th><th>Middle</th><th>Bottom</th></tr></thead>
+        <thead><tr><th>Team</th><th>Leader</th><th>Builder</th><th>Designer</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     `;
@@ -374,9 +374,9 @@ John Smith,12,987654321,11"></textarea>
     // Compute unassigned students (from tiers beyond teamCount)
     const teamCount = teams.length;
     const unassigned = [
-      ...tiers.top.slice(teamCount).map(s => ({...s, _tier:'TOP'})),
-      ...tiers.mid.slice(teamCount).map(s => ({...s, _tier:'MIDDLE'})),
-      ...tiers.bot.slice(teamCount).map(s => ({...s, _tier:'BOTTOM'})),
+      ...tiers.Leader.slice(teamCount).map(s => ({...s, _tier:'Leader'})),
+      ...tiers.mid.slice(teamCount).map(s => ({...s, _tier:'Builder'})),
+      ...tiers.bot.slice(teamCount).map(s => ({...s, _tier:'Designer'})),
       ...tiers.extra.map(s => ({...s, _tier:'EXTRA'}))
     ];
 
@@ -448,7 +448,7 @@ John Smith,12,987654321,11"></textarea>
     renderRoster();
     renderTeams();
 
-    const possibleTeams = Math.min(tiers.top.length, tiers.mid.length, tiers.bot.length);
+    const possibleTeams = Math.min(tiers.Leader.length, tiers.mid.length, tiers.bot.length);
     setStatus(`Ranked ${roster.length} students. Possible teams: ${possibleTeams}.`, 'ok');
   }
 
@@ -461,7 +461,7 @@ John Smith,12,987654321,11"></textarea>
     const seed = seedToUint32(seedInput.value.trim());
     const rng = seed === null ? Math.random : mulberry32(seed);
 
-    shuffleInPlace(tiers.top, rng);
+    shuffleInPlace(tiers.Leader, rng);
     shuffleInPlace(tiers.mid, rng);
     shuffleInPlace(tiers.bot, rng);
 
@@ -475,7 +475,7 @@ John Smith,12,987654321,11"></textarea>
   function makeTeams() {
     if (!roster.length) { setStatus('Rank students first.', 'warn'); return; }
 
-    const possibleTeams = Math.min(tiers.top.length, tiers.mid.length, tiers.bot.length);
+    const possibleTeams = Math.min(tiers.Leader.length, tiers.mid.length, tiers.bot.length);
     const maxTeams = Math.max(1, Math.min(Number(maxTeamsInput.value || 30), 60));
     const teamCount = Math.min(possibleTeams, maxTeams);
 
@@ -490,7 +490,7 @@ John Smith,12,987654321,11"></textarea>
     for (let i = 0; i < teamCount; i++) {
       teams.push({
         team: i + 1,
-        top: tiers.top[i],
+        Leader: tiers.Leader[i],
         mid: tiers.mid[i],
         bot: tiers.bot[i]
       });
@@ -504,11 +504,11 @@ John Smith,12,987654321,11"></textarea>
     if (!teams.length) { setStatus('Generate teams first.', 'warn'); return; }
 
     const lines = [];
-    lines.push('team,top_name,top_id,top_grade,middle_name,middle_id,middle_grade,bottom_name,bottom_id,bottom_grade');
+    lines.push('team,Leader_name,Leader_id,Leader_grade,Builder_name,Builder_id,Builder_grade,Designer_name,Designer_id,Designer_grade');
     for (const t of teams) {
       lines.push([
         t.team,
-        csvCell(t.top.name), csvCell(t.top.id), csvCell(t.top.grade),
+        csvCell(t.Leader.name), csvCell(t.Leader.id), csvCell(t.Leader.grade),
         csvCell(t.mid.name), csvCell(t.mid.id), csvCell(t.mid.grade),
         csvCell(t.bot.name), csvCell(t.bot.id), csvCell(t.bot.grade)
       ].join(','));
@@ -525,7 +525,7 @@ John Smith,12,987654321,11"></textarea>
 
   async function copyTeams() {
     if (!teams.length) { setStatus('Generate teams first.', 'warn'); return; }
-    const text = teams.map(t => `Team ${t.team}: ${t.top.name} | ${t.mid.name} | ${t.bot.name}`).join('\n');
+    const text = teams.map(t => `Team ${t.team}: ${t.Leader.name} | ${t.mid.name} | ${t.bot.name}`).join('\n');
     try {
       await copyToClipboard(text);
       setStatus('Copied teams to clipboard.', 'ok');
@@ -537,7 +537,7 @@ John Smith,12,987654321,11"></textarea>
   function clearAll() {
     csvInput.value = '';
     roster = [];
-    tiers = { top: [], mid: [], bot: [], extra: [] };
+    tiers = { Leader: [], mid: [], bot: [], extra: [] };
     teams = [];
     renderRoster();
     renderTeams();
